@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Windows.Forms;
 
 namespace LostArkLogger
 {
@@ -22,16 +18,7 @@ namespace LostArkLogger
         const string oodleDll = "oo2net_9_win64.dll";
         public static void Init()
         {
-            var lostArkProcesses = Process.GetProcessesByName("LOSTARK");
-            foreach (var lostArkProcess in lostArkProcesses)
-            {
-                var sb = new StringBuilder(1024);
-                int bufferLength = sb.Capacity + 1;
-                VersionCheck.QueryFullProcessImageName(lostArkProcess.Handle, 0, sb, ref bufferLength);
-                var lostArkExe = sb.ToString();
-                var lostArkPath = Path.GetDirectoryName(lostArkExe);
-                SetDllDirectory(lostArkPath);
-            }
+            SetDllDirectory(oodleDll);
             var payload = ObjectSerialize.Decompress(Properties.Settings.Default.Region == Region.Steam ? Properties.Resources.oodle_state_Steam : Properties.Resources.oodle_state_Korea); // to do select correct bin
             initDict = payload.Skip(0x20).Take(0x800000).ToArray();
             var compressorSize = BitConverter.ToInt32(payload, 0x18);
@@ -45,6 +32,7 @@ namespace LostArkLogger
         public static Byte[] Decompress(Byte[] decompressed)
         {
             var oodleSize = BitConverter.ToInt32(decompressed, 0);
+            if (oodleSize < 0) return null;
             var payload = decompressed.Skip(4).ToArray();
             var tempPayload = new Byte[oodleSize];
             try

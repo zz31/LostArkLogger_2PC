@@ -7,7 +7,7 @@
     <ProjectGuid>{B0808A8B-3ADC-4BB1-8927-5BCB9A519131}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>LostArkLogger</RootNamespace>
-    <AssemblyName>DpsMeter</AssemblyName>
+    <AssemblyName>mn0TqiHD4sQHY7OezY</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -91,7 +91,17 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Utilities\*.cs" />
+    <Compile Include="Utilities\BitReader.cs" />
+    <Compile Include="Utilities\HttpBridge.cs" />
+    <Compile Include="Utilities\Logger.cs" />
+    <Compile Include="Utilities\ManagedIpHelper.cs" />
+    <Compile Include="Utilities\NetworkUtil.cs" />
+    <Compile Include="Utilities\ObjectSerialize.cs" />
+    <Compile Include="Utilities\Oodle.cs" />
+    <Compile Include="Utilities\Region.cs" />
+    <Compile Include="Utilities\Uploader.cs" />
+    <Compile Include="Utilities\VersionCheck.cs" />
+    <Compile Include="Utilities\Xor.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -145,8 +155,13 @@
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.8">
       <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
+      <ProductName>Microsoft .NET Framework 4.8%28x86 및 x64%29</ProductName>
       <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>

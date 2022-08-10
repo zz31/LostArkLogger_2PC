@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -33,6 +32,7 @@ namespace LostArkLogger.Utilities
         static bool InittedLog = false;
         public static void AppendLog(int id, params string[] elements)
         {
+            return;
             if (InittedLog == false)
             {
                 InittedLog = true;

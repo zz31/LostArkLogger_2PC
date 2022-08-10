@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace LostArkLogger
 {
@@ -22,7 +23,8 @@ namespace LostArkLogger
         public event Action onNewZone;
         public event Action beforeNewZone;
         public event Action<int> onPacketTotalCount;
-        public bool use_npcap = false;
+        internal Action<long, long> onHpChange;
+        public bool use_npcap = true;
         private object lockPacketProcessing = new object(); // needed to synchronize UI swapping devices
         public Machina.Infrastructure.NetworkMonitorType? monitorType = null;
         public List<Encounter> Encounters = new List<Encounter>();
@@ -37,17 +39,20 @@ namespace LostArkLogger
 
         public Parser()
         {
+        }
+        public void startParse(string nicName)
+        {
             Encounters.Add(currentEncounter);
             onCombatEvent += Parser_onDamageEvent;
             onNewZone += Parser_onNewZone;
             statusEffectTracker = new StatusEffectTracker(this);
             statusEffectTracker.OnStatusEffectEnded += Parser_onStatusEffectEnded;
-            statusEffectTracker.OnStatusEffectStarted += StatusEffectTracker_OnStatusEffectStarted; ;
-            InstallListener();
+            statusEffectTracker.OnStatusEffectStarted += StatusEffectTracker_OnStatusEffectStarted;
+            InstallListener(nicName);
         }
 
         // UI needs to be able to ask us to reload our listener based on the current user settings
-        public void InstallListener()
+        public void InstallListener(string nicName)
         {
             lock (lockPacketProcessing)
             {
@@ -68,7 +73,8 @@ namespace LostArkLogger
                     try
                     {
                         pcap_strerror(1); // verify winpcap works at all
-                        gameInterface = NetworkUtil.GetAdapterUsedByProcess("LostArk");
+                        gameInterface = NetworkUtil.GetAdapterUsedByProcess(nicName);
+                        if (gameInterface == null) { MessageBox.Show("selected nic was not exist"); Environment.Exit(0); }
                         foreach (var device in CaptureDeviceList.Instance)
                         {
                             if (device.MacAddress == null) continue; // SharpPcap.IPCapDevice.MacAddress is null in some cases
@@ -76,7 +82,7 @@ namespace LostArkLogger
                             {
                                 try
                                 {
-                                    device.Open(DeviceModes.None, 1000); // todo: 1sec timeout ok?
+                                    device.Open(DeviceModes.Promiscuous, 1000); // todo: 1sec timeout ok?
                                     device.Filter = filter;
                                     device.OnPacketArrival += new PacketArrivalEventHandler(Device_OnPacketArrival_pcap);
                                     device.StartCapture();
@@ -144,6 +150,7 @@ namespace LostArkLogger
             };
             onCombatEvent?.Invoke(log);
             currentEncounter.RaidInfos.Add(log);
+            if (targetEntity.Type != Entity.EntityType.Player) onHpChange(dmgEvent.CurHp, dmgEvent.MaxHp);
             Logger.AppendLog(8, sourceEntity.EntityId.ToString("X"), sourceEntity.Name, skillId.ToString(), Skill.GetSkillName(skillId), skillEffectId.ToString(), Skill.GetSkillEffectName(skillEffectId), targetEntity.EntityId.ToString("X"), targetEntity.Name, dmgEvent.Damage.ToString(), dmgEvent.Modifier.ToString("X"), dmgEvent.CurHp.ToString(), dmgEvent.MaxHp.ToString());
         }
         void ProcessSkillDamage(PKTSkillDamageNotify damage)
@@ -222,29 +229,34 @@ namespace LostArkLogger
                 }
                 var payload = packets.Skip(6).Take(packetSize - 6).ToArray();
                 Xor.Cipher(payload, BitConverter.ToUInt16(packets, 2), XorTable);
-                switch (packets[4])
+                try
                 {
-                    case 0: //None
-                        payload = payload.Skip(16).ToArray();
-                        break;
-                    case 1: //LZ4
-                        var buffer = new byte[0x11ff2];
-                        var result = LZ4Codec.Decode(payload, 0, payload.Length, buffer, 0, 0x11ff2);
-                        if (result < 1) throw new Exception("LZ4 output buffer too small");
-                        payload = buffer.Take(result).Skip(16).ToArray();
-                        break;
-                    case 2: //Snappy
-                        //https://github.com/robertvazan/snappy.net
-                        payload = Snappy.SnappyCodec.Uncompress(payload.ToArray()).Skip(16).ToArray();
-                        //payload = SnappyCodec.Uncompress(payload.Skip(Properties.Settings.Default.Region == Region.Russia ? 4 : 0).ToArray()).Skip(16).ToArray();
-                        break;
-                    case 3: //Oodle
-                        payload = Oodle.Decompress(payload).Skip(16).ToArray();
-                        break;
-                    default:
-                        payload = payload.Skip(16).ToArray();
-                        break;
-                }
+                    switch (packets[4])
+                    {
+                        case 0: //None
+                            payload = payload.Skip(16).ToArray();
+                            break;
+                        case 1: //LZ4
+                            var buffer = new byte[0x11ff2];
+                            var result = LZ4Codec.Decode(payload, 0, payload.Length, buffer, 0, 0x11ff2);
+                            if (result < 1) throw new Exception("LZ4 output buffer too small");
+                            payload = buffer.Take(result).Skip(16).ToArray();
+                            break;
+                        case 2: //Snappy
+                                //https://github.com/robertvazan/snappy.net
+                            payload = Snappy.SnappyCodec.Uncompress(payload.ToArray()).Skip(16).ToArray();
+                            //payload = SnappyCodec.Uncompress(payload.Skip(Properties.Settings.Default.Region == Region.Russia ? 4 : 0).ToArray()).Skip(16).ToArray();
+                            break;
+                        case 3: //Oodle
+                            var tmp_payload = Oodle.Decompress(payload);
+                            if (tmp_payload == null) return;
+                            payload = tmp_payload.Skip(16).ToArray();
+                            break;
+                        default:
+                            payload = payload.Skip(16).ToArray();
+                            break;
+                    }
+                } catch (Exception e) { Logger.AppendLog(65535, "DECOMPRESS_FAILED", BitConverter.ToString(payload)); }
 
                 // write packets for analyzing, bypass common, useless packets
                 // if (opcode != OpCodes.PKTMoveError && opcode != OpCodes.PKTMoveNotify && opcode != OpCodes.PKTMoveNotifyList && opcode != OpCodes.PKTTransitStateNotify && opcode != OpCodes.PKTPing && opcode != OpCodes.PKTPong)
@@ -398,10 +410,10 @@ namespace LostArkLogger
                     };
                     currentEncounter.Entities.AddOrUpdate(tempEntity);
 
-                    var currentHp = pc.statPair.Value[pc.statPair.StatType.IndexOf((byte)StatType.STAT_TYPE_HP)].ToString();
-                    var maxHp = pc.statPair.Value[pc.statPair.StatType.IndexOf((byte)StatType.STAT_TYPE_MAX_HP)].ToString();
+                    //var currentHp = pc.statPair.Value[pc.statPair.StatType.IndexOf((byte)StatType.STAT_TYPE_HP)].ToString();
+                    //var maxHp = pc.statPair.Value[pc.statPair.StatType.IndexOf((byte)StatType.STAT_TYPE_MAX_HP)].ToString();
 
-                    Logger.AppendLog(3, pc.PlayerId.ToString("X"), pc.Name, pc.ClassId.ToString(), Npc.GetPcClass(pc.ClassId), pc.Level.ToString(), tempEntity.GearScore, currentHp, maxHp);
+                    //Logger.AppendLog(3, pc.PlayerId.ToString("X"), pc.Name, pc.ClassId.ToString(), Npc.GetPcClass(pc.ClassId), pc.Level.ToString(), tempEntity.GearScore, currentHp, maxHp);
                     statusEffectTracker.InitPc(pc);
                     onNewZone?.Invoke();
                 }
@@ -426,10 +438,10 @@ namespace LostArkLogger
                     currentEncounter.Entities.AddOrUpdate(temp);
                     currentEncounter.PartyEntities[temp.PartyId] = temp;
 
-                    var currentHp = pc.statPair.Value[pc.statPair.StatType.IndexOf((byte)StatType.STAT_TYPE_HP)].ToString();
-                    var maxHp = pc.statPair.Value[pc.statPair.StatType.IndexOf((byte)StatType.STAT_TYPE_MAX_HP)].ToString();
+                    //var currentHp = pc.statPair.Value[pc.statPair.StatType.IndexOf((byte)StatType.STAT_TYPE_HP)].ToString();
+                    //var maxHp = pc.statPair.Value[pc.statPair.StatType.IndexOf((byte)StatType.STAT_TYPE_MAX_HP)].ToString();
 
-                    Logger.AppendLog(3, pc.PlayerId.ToString("X"), temp.Name, pc.ClassId.ToString(), Npc.GetPcClass(pc.ClassId), pc.Level.ToString(), temp.GearScore, currentHp, maxHp);
+                    //Logger.AppendLog(3, pc.PlayerId.ToString("X"), temp.Name, pc.ClassId.ToString(), Npc.GetPcClass(pc.ClassId), pc.Level.ToString(), temp.GearScore, currentHp, maxHp);
                     statusEffectTracker.NewPc(pcPacket);
                 }
                 else if (opcode == OpCodes.PKTNewNpc)

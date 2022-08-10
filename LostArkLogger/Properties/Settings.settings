@@ -3,13 +3,13 @@
   <Profiles />
   <Settings>
     <Setting Name="IgnoreWarning" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
+      <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="Region" Type="LostArkLogger.Region" Scope="User">
-      <Value Profile="(Default)">Steam</Value>
+      <Value Profile="(Default)">Korea</Value>
     </Setting>
     <Setting Name="Npcap" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
+      <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="AutoUpload" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>

@@ -1,50 +1,57 @@
-﻿using System;
+﻿using LostArkLogger.Utilities;
+using System;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Windows.Forms;
-using LostArkLogger.Utilities;
-using System.ComponentModel;
 
 namespace LostArkLogger
 {
-    public partial class MainWindow : Form, INotifyPropertyChanged
+    public partial class MainWindow : Form//, INotifyPropertyChanged
     {
         Parser sniffer;
         Overlay overlay;
         private int _packetCount;
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        //public event PropertyChangedEventHandler PropertyChanged;
 
         public string PacketCount
         {
-            get { return "Logged Packets: " + _packetCount; }
+            get { return "Packets: " + _packetCount; }
         }
 
         public MainWindow()
         {
             InitializeComponent();
-            versionLabel.Text = "v" + System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString();
             Oodle.Init();
             if (!Directory.Exists("logs")) Directory.CreateDirectory("logs");
             sniffer = new Parser();
             sniffer.onPacketTotalCount += (int totalPacketCount) =>
             {
                 _packetCount = totalPacketCount;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PacketCount)));
+                //PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PacketCount)));
             };
             regionSelector.DataSource = Enum.GetValues(typeof(Region));
             regionSelector.SelectedIndex = (int)Properties.Settings.Default.Region;
             regionSelector.SelectedIndexChanged += new EventHandler(regionSelector_SelectedIndexChanged);
-            loggedPacketCountLabel.Text = "Logged Packets : 0";
-            loggedPacketCountLabel.DataBindings.Add("Text", this, nameof(PacketCount));
+            loggedPacketCountLabel.Text = "Packets: 0";
+            //loggedPacketCountLabel.DataBindings.Add("Text", this, nameof(PacketCount));
             displayName.Checked = Properties.Settings.Default.DisplayNames;
             autoUpload.Checked = Properties.Settings.Default.AutoUpload;
             displayName.CheckedChanged += new EventHandler(displayName_CheckedChanged);
             autoUpload.CheckedChanged += new EventHandler(autoUpload_CheckedChanged);
             //sniffModeCheckbox.Checked = Properties.Settings.Default.Npcap;
-            overlay = new Overlay();
-            overlay.AddSniffer(sniffer);
-            overlay.Show();
+            this.FormClosed += new FormClosedEventHandler(form_CloseAll);
+            foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                nicListBox.Items.Add(nic.Name);
+            }
+        }
+
+        private void form_CloseAll(object sender, FormClosedEventArgs e)
+        {
+            Environment.Exit(Environment.ExitCode);
         }
 
         private void weblink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -84,23 +91,11 @@ namespace LostArkLogger
                 }
             }
         }
-        private void sniffModeCheckbox_CheckedChanged(object sender, EventArgs e)
-        {
-            this.sniffModeCheckbox.Enabled = false;
-            this.sniffer.use_npcap = sniffModeCheckbox.Checked;
-            this.sniffer.InstallListener();
-            // This will unset the checkbox if it fails to initialize
-            this.sniffModeCheckbox.Checked = this.sniffer.use_npcap;
-            this.sniffModeCheckbox.Enabled = true;
-            Properties.Settings.Default.Npcap = sniffModeCheckbox.Checked;
-            Properties.Settings.Default.Save();
-        }
 
         private void regionSelector_SelectedIndexChanged(object sender, EventArgs e)
         {
-            //Properties.Settings.Default.Region = (Region)Enum.Parse(typeof(Region), regionSelector.Text);
-            //Properties.Settings.Default.Save();
-            //System.Diagnostics.Process.Start(AppDomain.CurrentDomain.FriendlyName);
+            Properties.Settings.Default.Region = (Region)Enum.Parse(typeof(Region), regionSelector.Text);
+            Properties.Settings.Default.Save();
             //Environment.Exit(0);
         }
 
@@ -115,7 +110,30 @@ namespace LostArkLogger
         {
             Properties.Settings.Default.AutoUpload = autoUpload.Checked;
             Properties.Settings.Default.Save();
+        }
 
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            loggedPacketCountLabel.Text = PacketCount;
+            overlay.tryUpdate();
+        }
+
+        private void MainWindow_Load(object sender, EventArgs e)
+        {
+            this.Location = new System.Drawing.Point(0, 0);
+        }
+
+        private void nicListBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            nicListBox.Enabled = false;
+            overlay = new Overlay();
+            overlay.Show();
+            overlay.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width / 2, 0);
+            overlay.Size = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Width / 2, Screen.PrimaryScreen.Bounds.Height);
+            sniffer.startParse(nicListBox.SelectedItem.ToString());
+            overlay.AddSniffer(sniffer);
+            sniffer.onHpChange += overlay.onhpUpdate;
+            timer1.Enabled = true;
         }
     }
 }

@@ -1,10 +1,10 @@
-﻿using System;
+﻿using LostArkLogger.Utilities;
+using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
-using LostArkLogger.Utilities;
 
 namespace LostArkLogger
 {
@@ -60,7 +60,7 @@ namespace LostArkLogger
             if (NpcapIndex != -1)
             {
                 sniffer.use_npcap = true;
-                sniffer.InstallListener();
+                sniffer.InstallListener("이더넷");
                 if (!sniffer.use_npcap)
                 {
                     EnqueueMessage(0, "Failed to initialize Npcap, using raw sockets instead. You can try to restart the app.");

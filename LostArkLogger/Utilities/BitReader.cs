@@ -99,7 +99,7 @@ namespace LostArkLogger
         public UInt64 ReadFlag()
         {
             var flag = ReadByte();
-            for(var i = 0; i < 6; i++) if (((flag >> i) & 1) != 0) ReadUInt32();
+            for (var i = 0; i < 6; i++) if (((flag >> i) & 1) != 0) ReadUInt32();
             if (((flag >> 6) & 1) != 0) ReadBytes(ReadUInt16());
             return 0;
         }
@@ -146,7 +146,7 @@ namespace LostArkLogger
         {
             var num = ReadUInt16();
             var list = new List<T>();
-            for(var i = 0; i < num; i++)
+            for (var i = 0; i < num; i++)
                 list.Add(Read<T>(byteArraySize));
             return list;
         }

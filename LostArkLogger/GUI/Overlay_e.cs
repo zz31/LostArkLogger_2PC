@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -13,7 +12,7 @@ namespace LostArkLogger
         enum Level // need better state, suboverlay type/etc.
         {
             None,
-            StatusEffectTimes,
+            PCEntities,
             Damage,
             Counterattacks,
             Stagger,
@@ -53,29 +52,16 @@ namespace LostArkLogger
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Overlay_MouseDown);
             this.ResumeLayout(false);
             SetStyle(ControlStyles.ResizeRedraw, true);
-            if (Properties.Settings.Default.Region == LostArkLogger.Region.Korea)
-            {
-                FormatNumber = FormatNumber_K;
-                FormatNumber_i = FormatNumber_K;
-            } else
-            {
-                FormatNumber = FormatNumber_EN;
-                FormatNumber_i = FormatNumber_EN;
-            }
         }
         internal void AddSniffer(Parser s)
         {
             sniffer = s;
             sniffer.onCombatEvent += AddDamageEvent;
-            sniffer.statusEffectTracker.OnChange += StatusEffectsChangedEvent;
             encounter = sniffer.currentEncounter;
         }
         Encounter encounter;
         Entity SubEntity;
         Font font = new Font("Helvetica", 10);
-        internal Func<UInt64, string> FormatNumber;
-        internal Func<Int64, string> FormatNumber_i;
-
         void AddDamageEvent(LogInfo log)
         {
             if (sniffer.currentEncounter.Infos.Count > 0) encounter = sniffer.currentEncounter;
@@ -84,7 +70,6 @@ namespace LostArkLogger
 
         void StatusEffectsChangedEvent()
         {
-            if(level == Level.StatusEffectTimes)
                 Invalidate();
         }
 
@@ -97,15 +82,7 @@ namespace LostArkLogger
             foreach (var color in colors) brushes.Add(new SolidBrush(ColorTranslator.FromHtml(color)));
         }
         int barHeight = 20;
-        public static string FormatNumber_K(UInt64 n)
-        {
-            if (n < 10000) { return n.ToString(); }
-            if (n < 100000000) return Math.Floor((decimal)(n / 10000)).ToString() + "만";
-            if (n < 1000000000000) return (Math.Floor((decimal)(n / 1000000)) / 100).ToString() + "억";//x.xx억
-            if (n >= 1000000000000) return (Math.Floor((decimal)(n / 100000000)) / 10000).ToString() + "조";//x.xxxx조
-            return n.ToString();
-        }
-        public static string FormatNumber_K(Int64 n)
+        public static string FormatNumber(UInt64 n) // https://stackoverflow.com/questions/30180672/string-format-numbers-to-millions-thousands-with-rounding
         {
             if (n < 0) return "0";
             if (n < 10000) { return n.ToString(); }
@@ -114,54 +91,15 @@ namespace LostArkLogger
             if (n >= 1000000000000) return (Math.Floor((decimal)(n / 100000000)) / 10000).ToString() + "조";//x.xxxx조
             return n.ToString();
         }
-        public static string FormatNumber_EN(UInt64 n) // https://stackoverflow.com/questions/30180672/string-format-numbers-to-millions-thousands-with-rounding
+        public static string FormatNumber(Int64 n) // https://stackoverflow.com/questions/30180672/string-format-numbers-to-millions-thousands-with-rounding
         {
-            if (n < 1000) return n.ToString();
-            if (n < 10000) return String.Format("{0:#,.##}K", n - 5);
-            if (n < 100000) return String.Format("{0:#,.#}K", n - 50);
-            if (n < 1000000) return String.Format("{0:#,.}K", n - 500);
-            if (n < 10000000) return String.Format("{0:#,,.##}M", n - 5000);
-            if (n < 100000000) return String.Format("{0:#,,.#}M", n - 50000);
-            if (n < 1000000000) return String.Format("{0:#,,.}M", n - 500000);
-            return String.Format("{0:#,,,.##}B", n - 5000000);
+            if (n < 0) return "0";
+            if (n < 10000) { return n.ToString(); }
+            if (n < 100000000) return Math.Floor((decimal)(n / 10000)).ToString() + "만";
+            if (n < 1000000000000) return (Math.Floor((decimal)(n / 1000000)) / 100).ToString() + "억";//x.xx억
+            if (n >= 1000000000000) return (Math.Floor((decimal)(n / 100000000)) / 10000).ToString() + "조";//x.xxxx조
+            return n.ToString();
         }
-        public static string FormatNumber_EN(Int64 n) // https://stackoverflow.com/questions/30180672/string-format-numbers-to-millions-thousands-with-rounding
-        {
-            if (n < 1000) return "0";
-            if (n < 10000) return String.Format("{0:#,.##}K", n - 5);
-            if (n < 100000) return String.Format("{0:#,.#}K", n - 50);
-            if (n < 1000000) return String.Format("{0:#,.}K", n - 500);
-            if (n < 10000000) return String.Format("{0:#,,.##}M", n - 5000);
-            if (n < 100000000) return String.Format("{0:#,,.#}M", n - 50000);
-            if (n < 1000000000) return String.Format("{0:#,,.}M", n - 500000);
-            return String.Format("{0:#,,,.##}B", n - 5000000);
-        }
-
-        private Int64 chp = 0;
-        private Int64 mhp = 0;
-        private Int64 tdps = 0;
-        private bool updated = false;
-        private string hp_str = "Damage";
-        private string estTime_str = "";
-        public void onhpUpdate(Int64 a, Int64 b)
-        {
-            chp = a;
-            mhp = b;
-            updated = true;
-        }
-        private void dpsUpdate(UInt64 a)
-        {
-            tdps = (Int64)a;
-            updated = true;
-        }
-        internal void tryUpdate()
-        {
-            if (mhp == 0 || updated != true) return;
-            Decimal t = chp / tdps;
-            hp_str = "[ "+FormatNumber_i(chp)+"  /  "+FormatNumber_i(mhp)+" HP ]";
-            estTime_str = FormatNumber_i(tdps)+" | "+ Math.Floor(t / 60).ToString() + "M " + Math.Floor(t % 60) + "S";
-        }
-
         public Rectangle GetSpriteLocation(int i)
         {
             i--;
@@ -174,6 +112,7 @@ namespace LostArkLogger
          "Soulfist", "Sharpshooter", "Artillerist", "dummyfill", "Bard", "Glavier", "Assassin", "Deathblade", "Shadowhunter", "Paladin", "Scouter", "Reaper", "FemaleGunner", "Gunslinger", "MaleMartialArtist", "Striker", "Sorceress" };
         public Pen arrowPen = new Pen(Color.FromArgb(255, 255, 255, 255), 4) { StartCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor };
         IOrderedEnumerable<KeyValuePair<String, Tuple<UInt64, UInt32, UInt32, UInt64>>> orderedRows;
+        internal Action<ulong> teamDpsUpdate;
         private readonly Bitmap ClassSymbols = Properties.Resources.class_symbol_0;
         protected void OnPaintStatusEffectTimes(PaintEventArgs e, float heightBuffer)
         {
@@ -215,15 +154,7 @@ namespace LostArkLogger
             }
             var titleBar = e.Graphics.MeasureString(title, font);
             var heightBuffer = (barHeight - titleBar.Height) / 2;
-
-            if (level == Level.Damage && scope == Scope.TopLevel && hp_str != "Damage")
-            {
-                e.Graphics.DrawString(hp_str, font, black, 5, heightBuffer);
-                e.Graphics.DrawString(estTime_str, font, black, this.Width - e.Graphics.MeasureString(estTime_str, font).Width - 55, heightBuffer);
-            } else
-            {
-                e.Graphics.DrawString(title, font, black, 5, heightBuffer);
-            }
+            e.Graphics.DrawString(title, font, black, 5, heightBuffer);
 
             ControlPaint.DrawFocusRectangle(e.Graphics, new Rectangle(Size.Width - 50, barHeight / 4, 10, barHeight / 2));
             e.Graphics.DrawLine(arrowPen, Size.Width - 30, barHeight / 2, Size.Width - 20, barHeight / 2);
@@ -239,7 +170,6 @@ namespace LostArkLogger
             e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
             var heightBuffer = OnPaintDrawTitleBar(e);
 
-            if (encounter == null) return;
 
 
             if (scope == Scope.Encounters)
@@ -252,12 +182,6 @@ namespace LostArkLogger
             }
             else
             {
-                switch (level)
-                {
-                    case Level.StatusEffectTimes:
-                        OnPaintStatusEffectTimes(e, heightBuffer);
-                        return;
-                }
                 var elapsed = ((encounter.End == default(DateTime) ? DateTime.Now : encounter.End) - encounter.Start).TotalSeconds;
                 var rows = encounter.GetDamages((i => (Single)(
                     level == Level.Damage ? i.Damage :
@@ -282,11 +206,26 @@ namespace LostArkLogger
                     rows = encounter.GetRaidDamages((i => i.Damage), SubEntity);
                     elapsed = encounter.RaidTime;
                 }
+                else if (level == Level.PCEntities)
+                {
+                    var keys = encounter.Entities.Keys.ToArray();
+                    int fakei = 0;
+                    for (int i = 0; i < keys.Length; i++)
+                    {
+                        if (encounter.Entities[keys[i]].Type == Entity.EntityType.Player)
+                        {
+                            e.Graphics.FillRectangle(brushes[fakei % brushes.Count], 0, barHeight * (fakei + 1), Size.Width, barHeight);
+                            e.Graphics.DrawString(encounter.Entities[keys[i]].VisibleName, font, black, 16 + 5, barHeight * (fakei + 1) + heightBuffer);
+                            fakei++;
+                        }
+                    }
+                    return;
+                }
 
                 var maxDamage = rows.Count == 0 ? 0 : rows.Max(b => b.Value.Item1);
                 var totalDamage = rows.Values.Sum(b => (Single)b.Item1);
-                UInt64 teamdps = 0;
                 orderedRows = rows.OrderByDescending(b => b.Value);
+                UInt64 teamdps = 0;
                 for (var i = 0; i < orderedRows.Count(); i++)
                 {
                     var playerDmg = orderedRows.ElementAt(i);
@@ -337,8 +276,8 @@ namespace LostArkLogger
                     var edge = e.Graphics.MeasureString(formattedDmg, font);
                     e.Graphics.DrawString(rowText, font, black, nameOffset + 5, (i + 1) * barHeight + heightBuffer);
                     e.Graphics.DrawString(formattedDmg, font, black, Size.Width - edge.Width, (i + 1) * barHeight + heightBuffer);
+                    teamDpsUpdate(teamdps);
                 }
-                if (teamdps != 0) dpsUpdate(teamdps);
             }
         }
         [DllImport("user32.dll")] static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
@@ -352,31 +291,28 @@ namespace LostArkLogger
                 ReleaseCapture();
                 SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
 
-                var index = (int)Math.Floor(e.Location.Y / (float)barHeight - 1);
-                if (index >= 0)// && index <= Damages.Count)
-                {
-                    if (scope == Scope.TopLevel)
+                if (level != Level.PCEntities) {
+                    var index = (int)Math.Floor(e.Location.Y / (float)barHeight - 1);
+                    if (index >= 0)// && index <= Damages.Count)
                     {
-                        string entityName;
-                        switch (level)
+                        if (scope == Scope.TopLevel)
                         {
-                            case Level.StatusEffectTimes:
-                                entityName = orderedRows.ElementAt(index).Key;
-                                SubEntity = encounter.Infos.First(i => i.DestinationEntity.VisibleName == entityName).DestinationEntity;
-                                SwitchOverlay(Scope.Player);
-                                break;
-                            default:
-                                entityName = orderedRows.ElementAt(index).Key;
-                                SubEntity = encounter.Infos.First(i => i.SourceEntity.VisibleName == entityName).SourceEntity;
-                                SwitchOverlay(Scope.Player);
-                                break;
-                        }
+                            string entityName;
+                            switch (level)
+                            {
+                                default:
+                                    entityName = orderedRows.ElementAt(index).Key;
+                                    SubEntity = encounter.Infos.First(i => i.SourceEntity.VisibleName == entityName).SourceEntity;
+                                    SwitchOverlay(Scope.Player);
+                                    break;
+                            }
 
-                    }
-                    if (scope == Scope.Encounters)
-                    {
-                        encounter = sniffer.Encounters.ElementAt(sniffer.Encounters.Count - index - 1);
-                        SwitchOverlay(Scope.TopLevel);
+                        }
+                        if (scope == Scope.Encounters)
+                        {
+                            encounter = sniffer.Encounters.ElementAt(sniffer.Encounters.Count - index - 1);
+                            SwitchOverlay(Scope.TopLevel);
+                        }
                     }
                 }
                 if (new Rectangle(Size.Width - 50, barHeight / 4, 10, barHeight / 2).Contains(e.Location)) SwitchOverlay(Scope.Encounters);
