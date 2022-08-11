@@ -12,8 +12,7 @@ namespace LostArkLogger.Utilities
 {
     public class CharacterSearch
     {
-        bool captureMode = false;
-        bool isKrserver = false;
+        public bool captureMode = false;
         public Dictionary<string, string[]> playerDatas = new Dictionary<string, string[]>();//username, mgxData
         public string[] latestUserList = { null, null, null, null, null, null, null, null };
         public int latestUserPointer = 0;// % 8
@@ -53,7 +52,7 @@ namespace LostArkLogger.Utilities
             return retArr.ToArray();
         }
 
-        public Action onDataUpdated;
+        public Action onDataUpdated;//->overlay, invalidate
         public Func<Overlay.Level> getLvl;
         public bool parsing = false;
 
@@ -237,7 +236,7 @@ namespace LostArkLogger.Utilities
                                 case "남겨진 바람의 절벽 6세트 (30각성합계)":
                                     if (respTxt.EndsWith("남바12"))
                                     {
-                                        respTxt.Replace("남바12", "남바30");
+                                        respTxt = respTxt.Replace("남바12", "남바30");
                                     }
                                     else
                                     {
@@ -250,7 +249,7 @@ namespace LostArkLogger.Utilities
                                 case "세상을 구하는 빛 6세트 (30각성합계)":
                                     if (respTxt.EndsWith("세구18"))
                                     {
-                                        respTxt.Replace("세구18", "세구30");
+                                        respTxt = respTxt.Replace("세구18", "세구30");
                                     }
                                     else
                                     {
@@ -278,7 +277,7 @@ namespace LostArkLogger.Utilities
                             string iname = web.DocumentNode.SelectNodes("//div[@class='equipment_box']/div[@class='equipment equipment_left']/div[@class='equipment_info']/div[@class='equipment_name']")[i].InnerText.Trim();
                             if (itype == "무기")
                             {
-                                wInfo = iname.Split(' ')[0].Replace("\n", " ").Trim() + " ";//+xx
+                                wInfo = iname.Split(' ')[0].Replace("\n", " ").Trim() + " ";//+xx, 구 전설템은 오류있음
                             }
                             for (int j = 0; j < setname.Length; j++)
                             {
@@ -296,11 +295,14 @@ namespace LostArkLogger.Utilities
                             }
                         }
                         var keys = setInfo.Keys.ToArray();
+                        int relic_cnt = 0;
                         for (int i = 0; i < setInfo.Count; i++)
                         {
                             wInfo += keys[i] + setInfo[keys[i]].ToString();
-                            trashdetect_reliccnt += setInfo[keys[i]] % 2;
+                            trashdetect_reliccnt += setInfo[keys[i]] % 2;//유물셋이 짝수 가아니면 경고
+                            relic_cnt += setInfo[keys[i]];//총합 6세트가 아닌경우 reliccnt를 1 로 바꿔서 경고표시
                         }
+                        if (relic_cnt != 6) trashdetect_reliccnt = 1;
                     } else { wInfo = "장비없음"; }
                     if (trashdetect_reliccnt != 0) isWarnMsg += "세트";
 
@@ -322,7 +324,7 @@ namespace LostArkLogger.Utilities
                                 jewelCnt[jewels[i].InnerText] = 1;
                             }
                         }
-                        jewelStr = "보석{ ";
+                        jewelStr = "보석 { ";
                         var jDictKey = jewelCnt.Keys.ToArray();
                         for (int i = 0; i < jDictKey.Length; i++)
                         {
@@ -343,7 +345,7 @@ namespace LostArkLogger.Utilities
                     } else
                     {
                         jewelStr = "보석없음";
-                    }
+                    }//오류 : 이벤트 5렙 보석은 표기가안됨
                     if ((isSupport && upperLv5 < 8) || (!isSupport && !isMutant && upperLv5 < 10) || (isMutant && upperLv5 < 2)) isWarnMsg += "보석";
 
                     //트라이포드(스킬)
