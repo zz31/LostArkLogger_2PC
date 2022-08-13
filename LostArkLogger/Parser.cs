@@ -256,7 +256,11 @@ namespace LostArkLogger
                             payload = payload.Skip(16).ToArray();
                             break;
                     }
-                } catch (Exception e) { Logger.writeLogFile(65535, "DECOMPRESS_FAILED", BitConverter.ToString(payload)); }
+                } catch (Exception e) {
+                    Logger.writeLogFile(65535, "DECOMPRESS_FAILED", BitConverter.ToString(payload));
+                    fragmentedPacket = new Byte[0];
+                    return;
+                }
 
                 // write packets for analyzing, bypass common, useless packets
                 // if (opcode != OpCodes.PKTMoveError && opcode != OpCodes.PKTMoveNotify && opcode != OpCodes.PKTMoveNotifyList && opcode != OpCodes.PKTTransitStateNotify && opcode != OpCodes.PKTPing && opcode != OpCodes.PKTPong)
