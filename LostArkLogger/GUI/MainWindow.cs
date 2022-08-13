@@ -12,8 +12,9 @@ namespace LostArkLogger
     {
         Parser sniffer;
         Overlay overlay;
+        HttpBridge httpBridge;
         private int _packetCount;
-
+        string[] startArgs;
         //public event PropertyChangedEventHandler PropertyChanged;
 
         public string PacketCount
@@ -21,17 +22,12 @@ namespace LostArkLogger
             get { return "Packets: " + _packetCount; }
         }
 
-        public MainWindow()
+        public MainWindow(string[] args)
         {
+            startArgs = args;
             InitializeComponent();
             Oodle.Init();
             if (!Directory.Exists("logs")) Directory.CreateDirectory("logs");
-            sniffer = new Parser();
-            sniffer.onPacketTotalCount += (int totalPacketCount) =>
-            {
-                _packetCount = totalPacketCount;
-                //PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PacketCount)));
-            };
             regionSelector.DataSource = Enum.GetValues(typeof(Region));
             regionSelector.SelectedIndex = (int)Properties.Settings.Default.Region;
             regionSelector.SelectedIndexChanged += new EventHandler(regionSelector_SelectedIndexChanged);
@@ -46,6 +42,11 @@ namespace LostArkLogger
             foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
             {
                 nicListBox.Items.Add(nic.Name);
+            }
+
+            if (args != null && args.Length != 0)
+            {
+                this.Text = "CONSOLE MODE";
             }
         }
 
@@ -126,14 +127,30 @@ namespace LostArkLogger
         private void nicListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             nicListBox.Enabled = false;
-            overlay = new Overlay();
-            overlay.Show();
-            overlay.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width / 2, 0);
-            overlay.Size = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Width / 2, Screen.PrimaryScreen.Bounds.Height);
-            sniffer.startParse(nicListBox.SelectedItem.ToString());
-            overlay.AddSniffer(sniffer);
-            sniffer.onHpChange += overlay.onhpUpdate;
-            timer1.Enabled = true;
+            regionSelector.Enabled = false;
+            if (startArgs != null && startArgs.Length != 0)
+            {
+                this.Visible = false;
+                httpBridge = new HttpBridge();
+                httpBridge.args = startArgs;
+                httpBridge.Start(nicListBox.SelectedItem.ToString());
+            } else
+            {
+                sniffer = new Parser();
+                sniffer.onPacketTotalCount += (int totalPacketCount) =>
+                {
+                    _packetCount = totalPacketCount;
+                    //PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PacketCount)));
+                };
+                overlay = new Overlay();
+                overlay.Show();
+                overlay.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width / 2, 0);
+                overlay.Size = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Width / 2, Screen.PrimaryScreen.Bounds.Height);
+                sniffer.startParse(nicListBox.SelectedItem.ToString());
+                overlay.AddSniffer(sniffer);
+                sniffer.onHpChange += overlay.onhpUpdate;
+                timer1.Enabled = true;
+            }
         }
     }
 }

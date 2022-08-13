@@ -156,7 +156,7 @@ namespace LostArkLogger
         }
         internal void tryUpdate()
         {
-            if (mhp == 0 || updated != true) return;
+            if (mhp == 0 || tdps == 0 || updated != true) return;
             Decimal t = chp / tdps;
             hp_str = "[ "+FormatNumber_i(chp)+"  /  "+FormatNumber_i(mhp)+" HP ]";
             estTime_str = FormatNumber_i(tdps)+" | "+ Math.Floor(t / 60).ToString() + "M " + Math.Floor(t % 60) + "S";

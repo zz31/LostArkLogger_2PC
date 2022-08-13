@@ -12,7 +12,6 @@ namespace LostArkLogger.Utilities
         static string logsPath = Path.Combine(documentsPath, "Lost Ark Logs");
 
         public static bool debugLog = false;
-
         static BinaryWriter logger;
         static FileStream logStream;
 
@@ -29,27 +28,11 @@ namespace LostArkLogger.Utilities
             fileName = logsPath + "\\LostArk_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".log";
         }
         public static event Action<string> onLogAppend;
-        static bool InittedLog = false;
-        public static void AppendLog(int id, params string[] elements)
+        //static bool InittedLog = false;
+        public static void httpbridgeSender(int id, params string[] elements)
         {
-            return;
-            if (InittedLog == false)
-            {
-                InittedLog = true;
-                AppendLog(253, System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString());
-            }
             var log = id + "|" + DateTime.Now.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'") + "|" + String.Join("|", elements);
-            var logHash = string.Concat(System.Security.Cryptography.MD5.Create().ComputeHash(Encoding.Unicode.GetBytes(log)).Select(x => x.ToString("x2")));
-
-            Task.Run(() =>
-            {
-                lock (LogFileLock)
-                {
-                    File.AppendAllText(fileName, log + "|" + logHash + "\n");
-                }
-
-                onLogAppend?.Invoke(log + "\n");
-            });
+            onLogAppend?.Invoke(log + "\n");
         }
         public static void DoDebugLog(byte[] bytes)
         {
@@ -72,6 +55,19 @@ namespace LostArkLogger.Utilities
                     }
                 });
             }
+        }
+        public static void writeLogFile(int id, params string[] elements)
+        {
+            var log = id + "|" + DateTime.Now.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'") + "|" + String.Join("|", elements);
+            var logHash = string.Concat(System.Security.Cryptography.MD5.Create().ComputeHash(Encoding.Unicode.GetBytes(log)).Select(x => x.ToString("x2")));
+
+            Task.Run(() =>
+            {
+                lock (LogFileLock)
+                {
+                    File.AppendAllText(fileName, log + "|" + logHash + "\n");
+                }
+            });
         }
     }
 }

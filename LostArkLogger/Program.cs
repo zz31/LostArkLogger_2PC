@@ -19,20 +19,11 @@ namespace LostArkLogger
             Bluegrams.Application.PortableSettingsProvider.SettingsFileName = AppDomain.CurrentDomain.FriendlyName + ".ini";
             Bluegrams.Application.PortableSettingsProvider.ApplyProvider(Properties.Settings.Default);
             if (!AdminRelauncher()) return;
-            if (!IsConsole) Warning();
+            //if (!IsConsole) Warning();
             AttemptFirewallPrompt();
-            if (!IsConsole)
-            {
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new MainWindow());
-            }
-            else
-            {
-                var httpBridge = new HttpBridge();
-                httpBridge.args = args;
-                httpBridge.Start();
-            }
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new MainWindow(args));
             if (File.Exists(Utilities.Logger.fileName) && Properties.Settings.Default.AutoUpload)
             {
                 var fileBytes = File.ReadAllBytes(Utilities.Logger.fileName);

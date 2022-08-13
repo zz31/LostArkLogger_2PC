@@ -18,7 +18,9 @@ namespace LostArkLogger
 
         public string[] args;
 
-        public void Start()
+        //todo : add loa detail compatibility
+
+        public void Start(string nicName)
         {
             EnqueueMessage(0, "Arguments: " + String.Join(",", args));
 
@@ -57,20 +59,9 @@ namespace LostArkLogger
             //    }
             //}
 
-            if (NpcapIndex != -1)
-            {
-                sniffer.use_npcap = true;
-                sniffer.InstallListener("이더넷");
-                if (!sniffer.use_npcap)
-                {
-                    EnqueueMessage(0, "Failed to initialize Npcap, using raw sockets instead. You can try to restart the app.");
-                }
-                else
-                {
-                    EnqueueMessage(0, "Using Npcap!");
-                }
-
-            }
+            sniffer.use_npcap = true;
+            sniffer.isConsoleMode = true;
+            sniffer.startParse(nicName);
 
             Logger.onLogAppend += (string log) =>
             {
@@ -101,9 +92,6 @@ namespace LostArkLogger
             {
                 if (this.messageQueue.TryDequeue(out var sendMessage))
                 {
-#if DEBUG
-                    Console.WriteLine("Sending: " + sendMessage);
-#endif
                     HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:" + Port);
                     request.Content = new StringContent(sendMessage);
                     var mediaTypeHeaderValue = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
