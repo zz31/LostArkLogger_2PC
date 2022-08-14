@@ -13,9 +13,12 @@ namespace LostArkLogger.Utilities
     public class CharacterSearch
     {
         public bool captureMode = false;
-        public Dictionary<string, string[]> playerDatas = new Dictionary<string, string[]>();//username, mgxData
+        public Dictionary<string, characterSearchResult> playerDatas = new Dictionary<string, characterSearchResult>();//username, mgxData
         public string[] latestUserList = { null, null, null, null, null, null, null, null };
         public int latestUserPointer = 0;// % 8
+        private static readonly object addLock = new object();
+        private static readonly object parseLock = new object();
+
         private string userNameStr(string uname)
         {
             if (captureMode == true)
@@ -26,7 +29,7 @@ namespace LostArkLogger.Utilities
                 return uname;
             }
         }
-        public string[] getPlayerInfo(string uname)
+        public characterSearchResult getPlayerInfo(string uname)
         {
             if (uname == null) return null;
             if (playerDatas.ContainsKey(uname))
@@ -38,17 +41,18 @@ namespace LostArkLogger.Utilities
                 return null;
             }
         }
-        public string[][] getPlayerLast8()
+        public characterSearchResult[] getPlayerLast8()
         {
             if (playerDatas.Count == 0) return null;
-            List<string[]> retArr = new List<string[]>();
+            List<characterSearchResult> retArr = new List<characterSearchResult>();
 
             for (int k = 0; k < 8; k++)
             {
-                string[] tmpStr = getPlayerInfo(latestUserList[k]);
+                characterSearchResult tmpStr = getPlayerInfo(latestUserList[k]);
                 if (tmpStr != null) retArr.Add(tmpStr);
             }
 
+            if (retArr.Count == 0) return null;
             return retArr.ToArray();
         }
 
@@ -56,9 +60,8 @@ namespace LostArkLogger.Utilities
         public Func<Overlay.Level> getLvl;
         public bool parsing = false;
 
-        public void goParse()
+        public void doParse()
         {
-            if (parsing == true) { return; }
             if (parsing == false && getLvl() == Overlay.Level.Damage)//대미지일때만 체크해서 맨아래쪽에 overlay에서 출력함
             {
                 parsing = true;
@@ -73,10 +76,16 @@ namespace LostArkLogger.Utilities
                             if (latestUserList[i] == null) continue;
                             if (getPlayerInfo(latestUserList[i]) == null)
                             {
-                                string[] tmp_str = await checkMgx(latestUserList[i]);
-                                if (tmp_str != null) {
-                                    playerDatas[latestUserList[i]] = tmp_str;
-                                    onDataUpdated?.Invoke();//overlay 새로 갱신
+                                characterSearchResult tmp_str = await checkMgx(latestUserList[i]);
+                                string inv_str = await checkInven(latestUserList[i]);
+                                lock (parseLock)
+                                {
+                                    if (tmp_str != null && latestUserList[i] != null)
+                                    {
+                                        if (inv_str != null && inv_str != "0") tmp_str.resultInven = "박제" +inv_str+ "회";
+                                        playerDatas[latestUserList[i]] = tmp_str;
+                                        onDataUpdated?.Invoke();//overlay 새로 갱신
+                                    }
                                 }
                                 continueFlag = true;//한개라도 수정되었으면 다시한번 체크, 8개다 continue시 contflag = false로 파싱이끝난다
                                 break;//한개만 업뎃하고 다시 맨앞부터간다
@@ -85,21 +94,24 @@ namespace LostArkLogger.Utilities
                     }
                     catch (Exception e) { }
                     parsing = false;
-                    if (continueFlag == true) goParse();
+                    if (continueFlag == true) doParse();
                 });
             }
         }
         public void onNewPC(string username, ushort classid)
         {
-            if ((username == "You" || classid == 0 || username.Length < 3)) return;
-            if (!latestUserList.Contains(username))
+            if ((username == "You" || classid == 0 || username.Length < 2 || username.Length > 12)) return;
+            lock (addLock)
             {
-                latestUserList[latestUserPointer] = username;
-                latestUserPointer++;
-                latestUserPointer %= 8;
+                if (!latestUserList.Contains(username))
+                {
+                    latestUserList[latestUserPointer] = username;
+                    latestUserPointer++;
+                    latestUserPointer %= 8;
+                    //Console.WriteLine("Add : " + username);
+                }
+                doParse();
             }
-            Console.WriteLine("Add : " + username);
-            goParse();
         }
         public class PlayerData
         {
@@ -110,10 +122,30 @@ namespace LostArkLogger.Utilities
                 userName = u;
             }
         }
-        public async Task<string[]> checkMgx(string username)
+        public class characterSearchResult
         {
-            if (username.Length > 12 || username.Trim().Length == 0) { return null; }
-            Console.WriteLine("PARSE.. >> " + username);
+            public string username, resultTitle, resultWarn, resultContent, resultInven;
+            public characterSearchResult(string u, string rT, string rW, string rC)
+            {
+                this.username = u;
+                this.resultTitle = rT;
+                this.resultWarn = rW;
+                this.resultContent = rC;
+                this.resultInven = null;
+            }
+            public characterSearchResult(string u, string rT, string rW, string rC, string rI)
+            {
+                this.username = u;
+                this.resultTitle = rT;
+                this.resultWarn = rW;
+                this.resultContent = rC;
+                this.resultInven = rI;
+            }
+        }
+        public async Task<characterSearchResult> checkMgx(string username)
+        {
+            if (username == null || username.Length > 12 || username.Trim().Length == 0) { return null; }
+            //Console.WriteLine("PARSEmgx >> " + username);
             return await Task.Run(() =>
             {
                 try
@@ -138,7 +170,7 @@ namespace LostArkLogger.Utilities
 
                     //닉넴, 레벨, 원대
                     string isWarnMsg = "";//[WARN]
-                    string respTxt = userNameStr(chName) + "(" + chLevel + "Lv 원대" + expLevel + ") ";
+                    string respTxt = userNameStr(chName) + " (" + chLevel + "Lv 원대" + expLevel + ") : ";
                     if (int.Parse(expLevel) < 120) isWarnMsg += "원대";
 
                     //각인
@@ -214,11 +246,28 @@ namespace LostArkLogger.Utilities
                         {
                             switch (web.DocumentNode.SelectNodes("//div[@class='card_option']/div[@class='effect_box']/div[@class='effect']/div[@class='effect_name']")[i].InnerText.Trim())
                             {
+                                case "카제로스의 군단장 6세트 (18각성합계)":
+                                    if (!respTxt.EndsWith("암구30"))
+                                    {
+                                        respTxt += "암구18";
+                                    }
+                                    break;
+                                case "카제로스의 군단장 6세트 (30각성합계)":
+                                    if (respTxt.EndsWith("암구18"))
+                                    {
+                                        respTxt = respTxt.Replace("암구18", "암구30");
+                                    }
+                                    else
+                                    {
+                                        respTxt += "암구30";
+                                    }
+                                    break;
                                 case "라제니스의 운명 2세트 (10각성합계)"://세우라제
                                     if (respTxt.EndsWith("세우"))
                                     {
                                         respTxt = respTxt.Replace("세우", "세우라제");
-                                    } else
+                                    }
+                                    else
                                     {
                                         respTxt += "라제";
                                     }
@@ -262,10 +311,13 @@ namespace LostArkLogger.Utilities
                             }
                         }
                     } else { respTxt += "카드없음"; }
-                    if (!respTxt.Contains("세구30") && !respTxt.Contains("세구18") && !isSupport && !respTxt.Contains("세우라제")) isWarnMsg += "카드";
+                    if (!respTxt.Contains("세구30") && !respTxt.Contains("세구18") && !isSupport &&
+                    !respTxt.Contains("세우라제") && !respTxt.Contains("암구18") && !respTxt.Contains("암구30")) isWarnMsg += "카드";
+
 
                     //무기, 유물
                     string wInfo = "";
+                    string setItem = "";
                     int trashdetect_reliccnt = 0;
                     string[] setname = { "지배", "배신", "갈망", "파괴", "매혹", "사멸", "악몽", "환각", "구원" };
                     if (itemList != null)
@@ -298,12 +350,14 @@ namespace LostArkLogger.Utilities
                         int relic_cnt = 0;
                         for (int i = 0; i < setInfo.Count; i++)
                         {
-                            wInfo += keys[i] + setInfo[keys[i]].ToString();
+                            setItem += keys[i] + setInfo[keys[i]].ToString();
                             trashdetect_reliccnt += setInfo[keys[i]] % 2;//유물셋이 짝수 가아니면 경고
                             relic_cnt += setInfo[keys[i]];//총합 6세트가 아닌경우 reliccnt를 1 로 바꿔서 경고표시
                         }
                         if (relic_cnt != 6) trashdetect_reliccnt = 1;
-                    } else { wInfo = "장비없음"; }
+                    }
+                    if (wInfo.Length == 0) wInfo = "무기X";
+                    if (setItem.Length == 0) setItem = "유물X";
                     if (trashdetect_reliccnt != 0) isWarnMsg += "세트";
 
                     //보석
@@ -368,31 +422,36 @@ namespace LostArkLogger.Utilities
                     }
 
                     string tripodStr = "트포 { Lv4[" + tripodLev[0].ToString() + "] Lv5[" + tripodLev[1].ToString() + "] }";
-                    double tripodScore = tripodLev[0] * 0.25 + tripodLev[1];
-                    if ((isMutant && tripodScore < 3) || (isSupport && tripodScore < 4) || (!isMutant && !isSupport && tripodScore < 8)) isWarnMsg += "트포";
+                    double tripodScore = tripodLev[0] * 0.34 + tripodLev[1];
+                    if ((isMutant && tripodScore < 2.5) || (isSupport && tripodScore < 3.3) || (!isMutant && !isSupport && tripodScore < 6)) isWarnMsg += "트포";
 
-                    if (isWarnMsg.Length != 0) isWarnMsg = " [ WARN ] " + isWarnMsg;
+                    if (isWarnMsg.Length != 0) isWarnMsg = "[경고]" + isWarnMsg;
 
-                    return new string[] { respTxt + isWarnMsg, wInfo + "  " + rkr_3 + rkr_other + rkr_debuff + "  " + jewelStr + "  " + tripodStr };
-                    //경고 레벨원대 닉 무기 카드 각인 21각인 디버프 보석 트포
+                    characterSearchResult ret_info = new characterSearchResult(username, respTxt, isWarnMsg, wInfo + " " + setItem + " | " + rkr_3 + rkr_other + rkr_debuff + " | " + jewelStr + " | " + tripodStr);
+                    return ret_info;
+                    //레벨원대 | 경고 | 닉 무기 카드 각인 21각인 디버프 보석 트포
                 }
                 catch (Exception e) {
                     MessageBox.Show(e.StackTrace);
-                    return new string[] { };
+                    return null;
                 }
             });
         }
 
-        internal void resetLatestUser()
+        public void resetLatestUser()
         {
-            latestUserList = new string[] { null, null, null, null, null, null, null, null };
-            latestUserPointer = 0;// % 8
-            onDataUpdated();
+            lock (parseLock)
+            {
+                latestUserList = new string[] { null, null, null, null, null, null, null, null };
+                latestUserPointer = 0;// % 8
+                onDataUpdated();
+            }
         }
 
-        public async Task<string> checkInven(string username, uint classid, bool ignoreCheck)
+        public async Task<string> checkInven(string username)
         {
-            if ((username == "You" || classid == 0) && ignoreCheck == false) return null;
+            if (username == null || username.Length > 12 || username.Trim().Length == 0) { return null; }
+            //Console.WriteLine("PARSEinven >> " + username);
             return await Task.Run(() =>
             {
                 try
@@ -411,13 +470,13 @@ namespace LostArkLogger.Utilities
                     var cnt = xNodes.Count;
                     if (xNodes.Count == 1)
                     {
-                        if (xNodes[0].SelectNodes("//*[@class='no-result']").Count == 1)
+                        if (xNodes[0].SelectNodes("//*[@class='no-result']")?.Count == 1)
                         {
                             cnt = 0;
                         }
                     }
                     return cnt.ToString();
-                } catch(Exception e) { return ""; }
+                } catch(Exception e) { return null; }
             });
         }
     }

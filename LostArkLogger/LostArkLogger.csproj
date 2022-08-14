@@ -7,7 +7,7 @@
     <ProjectGuid>{B0808A8B-3ADC-4BB1-8927-5BCB9A519131}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>LostArkLogger</RootNamespace>
-    <AssemblyName>Ub2Awo8lrSRBqE</AssemblyName>
+    <AssemblyName>qBpWySJeXo</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -43,7 +43,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -56,6 +56,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -92,6 +95,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Utilities\BitReader.cs" />
+    <Compile Include="Utilities\characterSearch.cs" />
     <Compile Include="Utilities\HttpBridge.cs" />
     <Compile Include="Utilities\Logger.cs" />
     <Compile Include="Utilities\ManagedIpHelper.cs" />
@@ -135,6 +139,9 @@
       <Version>5.7.0</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="HtmlAgilityPack">
+      <Version>1.11.43</Version>
     </PackageReference>
     <PackageReference Include="K4os.Compression.LZ4">
       <Version>1.2.16</Version>

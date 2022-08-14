@@ -13,6 +13,7 @@ namespace LostArkLogger
         Parser sniffer;
         Overlay overlay;
         HttpBridge httpBridge;
+        CharacterSearch cSearch;
         private int _packetCount;
         string[] startArgs;
         //public event PropertyChangedEventHandler PropertyChanged;
@@ -34,9 +35,7 @@ namespace LostArkLogger
             loggedPacketCountLabel.Text = "Packets: 0";
             //loggedPacketCountLabel.DataBindings.Add("Text", this, nameof(PacketCount));
             displayName.Checked = Properties.Settings.Default.DisplayNames;
-            autoUpload.Checked = Properties.Settings.Default.AutoUpload;
             displayName.CheckedChanged += new EventHandler(displayName_CheckedChanged);
-            autoUpload.CheckedChanged += new EventHandler(autoUpload_CheckedChanged);
             //sniffModeCheckbox.Checked = Properties.Settings.Default.Npcap;
             this.FormClosed += new FormClosedEventHandler(form_CloseAll);
             foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
@@ -58,11 +57,6 @@ namespace LostArkLogger
         private void weblink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             System.Diagnostics.Process.Start("https://github.com/shalzuth/LostArkLogger");
-        }
-
-        private void overlayEnabled_CheckedChanged(object sender, EventArgs e)
-        {
-            overlay.Visible = overlayEnabled.Checked;
         }
 
         private void debugLog_CheckedChanged(object sender, EventArgs e)
@@ -97,6 +91,13 @@ namespace LostArkLogger
         {
             Properties.Settings.Default.Region = (Region)Enum.Parse(typeof(Region), regionSelector.Text);
             Properties.Settings.Default.Save();
+            if (Properties.Settings.Default.Region == LostArkLogger.Region.Korea)
+            {
+                specCheck.Visible = true;
+            } else
+            {
+                specCheck.Visible = false;
+            }
             //Environment.Exit(0);
         }
 
@@ -105,12 +106,6 @@ namespace LostArkLogger
             Properties.Settings.Default.DisplayNames = displayName.Checked;
             Properties.Settings.Default.Save();
 
-        }
-
-        private void autoUpload_CheckedChanged(object sender, EventArgs e)
-        {
-            Properties.Settings.Default.AutoUpload = autoUpload.Checked;
-            Properties.Settings.Default.Save();
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -149,8 +144,65 @@ namespace LostArkLogger
                 sniffer.startParse(nicListBox.SelectedItem.ToString());
                 overlay.AddSniffer(sniffer);
                 sniffer.onHpChange += overlay.onhpUpdate;
+                addBgColor.Enabled = true;
+                if (specCheck.Checked == true)
+                {
+                    overlay.specCheckerEnabled = specCheck.Checked;
+                    sniffer.specCheckerEnabled = specCheck.Checked;
+                    cSearch = new CharacterSearch();
+                    sniffer.onNewZone += cSearch.resetLatestUser;
+                    overlay.getLatestUserInfo += cSearch.getPlayerLast8;
+                    overlay.updateUserInfo += cSearch.doParse;
+                    cSearch.getLvl += overlay.GetLevel;
+                    cSearch.onDataUpdated += overlay.updateUI;
+                    sniffer.onNewPC += cSearch.onNewPC;
+                }
+                else if (specCheck.Checked == false)
+                {
+                    specCheck.Enabled = false;
+                }
                 timer1.Enabled = true;
             }
+        }
+
+        private void specCheck_CheckedChanged(object sender, EventArgs e)
+        {
+            if (nicListBox.Enabled == true)
+            {
+                if (specCheck.Checked == true && Properties.Settings.Default.Region == LostArkLogger.Region.Steam)
+                {
+                    specCheck.Checked = false;
+                    MessageBox.Show("This function uses an external website api to check other players information. So it only works on the KR server.");
+                } else if (specCheck.Checked == true && Properties.Settings.Default.Region == LostArkLogger.Region.Korea)
+                {
+                    MessageBox.Show("해당 기능은 외부 웹사이트 api를 이용합니다.\n미터기를 실행한 PC가 인터넷에 연결되어 있지 않다면 오류만 나고 작동하지 않으니, 해당 기능을 해제해 주세요.\n\n또한, 현재 오류로 이벤트 보석은 보석 없음으로 표기되니 참고바랍니다.");
+                }
+            } else if (nicListBox.Enabled == false)
+            {
+                if (specCheck.Checked == true && Properties.Settings.Default.Region == LostArkLogger.Region.Steam)
+                {
+                    specCheck.Enabled = false;
+                    specCheck.Checked = false;
+                    MessageBox.Show("This function uses an external website api to check other players information. So it only works on the KR server.");
+                } else if (Properties.Settings.Default.Region == LostArkLogger.Region.Korea)
+                {
+                    overlay.specCheckerEnabled = specCheck.Checked;
+                    //sniffer.specCheckerEnabled = specCheck.Checked;//off더라도 최근 유저목록은 꾸준히 갱신하고 on했을때 갱신
+                    if (specCheck.Checked == true)
+                    {
+                        overlay.updateUI();
+                        cSearch.doParse();
+                    } else
+                    {
+                        overlay.updateUI();
+                    }
+                }
+            }
+        }
+
+        private void addBgColor_CheckedChanged(object sender, EventArgs e)
+        {
+            overlay.addBGColor = addBgColor.Checked;
         }
     }
 }

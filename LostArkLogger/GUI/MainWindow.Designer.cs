@@ -32,19 +32,19 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainWindow));
             this.loggedPacketCountLabel = new System.Windows.Forms.Label();
             this.weblink = new System.Windows.Forms.LinkLabel();
-            this.overlayEnabled = new System.Windows.Forms.CheckBox();
             this.debugLog = new System.Windows.Forms.CheckBox();
             this.versionLabel = new System.Windows.Forms.Label();
             this.regionSelector = new System.Windows.Forms.ComboBox();
-            this.autoUpload = new System.Windows.Forms.CheckBox();
             this.displayName = new System.Windows.Forms.CheckBox();
             this.nicListBox = new System.Windows.Forms.ComboBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.specCheck = new System.Windows.Forms.CheckBox();
+            this.addBgColor = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // loggedPacketCountLabel
             // 
-            this.loggedPacketCountLabel.Location = new System.Drawing.Point(13, 9);
+            this.loggedPacketCountLabel.Location = new System.Drawing.Point(10, 9);
             this.loggedPacketCountLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.loggedPacketCountLabel.Name = "loggedPacketCountLabel";
             this.loggedPacketCountLabel.Size = new System.Drawing.Size(121, 12);
@@ -63,25 +63,10 @@
             this.weblink.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.weblink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.weblink_LinkClicked);
             // 
-            // overlayEnabled
-            // 
-            this.overlayEnabled.AutoSize = true;
-            this.overlayEnabled.Checked = true;
-            this.overlayEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.overlayEnabled.Enabled = false;
-            this.overlayEnabled.Location = new System.Drawing.Point(13, 24);
-            this.overlayEnabled.Margin = new System.Windows.Forms.Padding(5, 3, 5, 3);
-            this.overlayEnabled.Name = "overlayEnabled";
-            this.overlayEnabled.Size = new System.Drawing.Size(67, 16);
-            this.overlayEnabled.TabIndex = 5;
-            this.overlayEnabled.Text = "Overlay";
-            this.overlayEnabled.UseVisualStyleBackColor = true;
-            this.overlayEnabled.CheckedChanged += new System.EventHandler(this.overlayEnabled_CheckedChanged);
-            // 
             // debugLog
             // 
             this.debugLog.AutoSize = true;
-            this.debugLog.Location = new System.Drawing.Point(85, 24);
+            this.debugLog.Location = new System.Drawing.Point(12, 24);
             this.debugLog.Margin = new System.Windows.Forms.Padding(5, 3, 5, 3);
             this.debugLog.Name = "debugLog";
             this.debugLog.Size = new System.Drawing.Size(60, 16);
@@ -95,9 +80,9 @@
             this.versionLabel.Location = new System.Drawing.Point(11, 69);
             this.versionLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.versionLabel.Name = "versionLabel";
-            this.versionLabel.Size = new System.Drawing.Size(260, 22);
+            this.versionLabel.Size = new System.Drawing.Size(101, 22);
             this.versionLabel.TabIndex = 10;
-            this.versionLabel.Text = "EN 1.34.58.1816579 KR 1.985.1060.1822798";
+            this.versionLabel.Text = "2022.08.14";
             this.versionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // regionSelector
@@ -110,18 +95,6 @@
             this.regionSelector.Size = new System.Drawing.Size(81, 20);
             this.regionSelector.TabIndex = 12;
             this.regionSelector.SelectedIndexChanged += new System.EventHandler(this.regionSelector_SelectedIndexChanged);
-            // 
-            // autoUpload
-            // 
-            this.autoUpload.AutoSize = true;
-            this.autoUpload.Enabled = false;
-            this.autoUpload.Location = new System.Drawing.Point(144, 24);
-            this.autoUpload.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.autoUpload.Name = "autoUpload";
-            this.autoUpload.Size = new System.Drawing.Size(63, 16);
-            this.autoUpload.TabIndex = 13;
-            this.autoUpload.Text = "Upload";
-            this.autoUpload.UseVisualStyleBackColor = true;
             // 
             // displayName
             // 
@@ -152,18 +125,44 @@
             this.timer1.Interval = 500;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // specCheck
+            // 
+            this.specCheck.AutoSize = true;
+            this.specCheck.Location = new System.Drawing.Point(80, 24);
+            this.specCheck.Name = "specCheck";
+            this.specCheck.Size = new System.Drawing.Size(84, 16);
+            this.specCheck.TabIndex = 16;
+            this.specCheck.Text = "스펙검사기";
+            this.specCheck.UseVisualStyleBackColor = true;
+            this.specCheck.Visible = false;
+            this.specCheck.CheckedChanged += new System.EventHandler(this.specCheck_CheckedChanged);
+            // 
+            // addBgColor
+            // 
+            this.addBgColor.AutoSize = true;
+            this.addBgColor.Checked = true;
+            this.addBgColor.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.addBgColor.Enabled = false;
+            this.addBgColor.Location = new System.Drawing.Point(120, 72);
+            this.addBgColor.Name = "addBgColor";
+            this.addBgColor.Size = new System.Drawing.Size(152, 16);
+            this.addBgColor.TabIndex = 17;
+            this.addBgColor.Text = "addBackground(black)";
+            this.addBgColor.UseVisualStyleBackColor = true;
+            this.addBgColor.CheckedChanged += new System.EventHandler(this.addBgColor_CheckedChanged);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 98);
+            this.Controls.Add(this.addBgColor);
+            this.Controls.Add(this.specCheck);
             this.Controls.Add(this.nicListBox);
             this.Controls.Add(this.displayName);
-            this.Controls.Add(this.autoUpload);
             this.Controls.Add(this.regionSelector);
             this.Controls.Add(this.versionLabel);
             this.Controls.Add(this.debugLog);
-            this.Controls.Add(this.overlayEnabled);
             this.Controls.Add(this.weblink);
             this.Controls.Add(this.loggedPacketCountLabel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -181,13 +180,13 @@
         #endregion
         public System.Windows.Forms.Label loggedPacketCountLabel;
         private System.Windows.Forms.LinkLabel weblink;
-        private System.Windows.Forms.CheckBox overlayEnabled;
         private System.Windows.Forms.CheckBox debugLog;
         private System.Windows.Forms.Label versionLabel;
         private System.Windows.Forms.ComboBox regionSelector;
-        private System.Windows.Forms.CheckBox autoUpload;
         private System.Windows.Forms.CheckBox displayName;
         private System.Windows.Forms.ComboBox nicListBox;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.CheckBox specCheck;
+        private System.Windows.Forms.CheckBox addBgColor;
     }
 }
