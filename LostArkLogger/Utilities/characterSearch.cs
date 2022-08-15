@@ -432,7 +432,7 @@ namespace LostArkLogger.Utilities
                     //레벨원대 | 경고 | 닉 무기 카드 각인 21각인 디버프 보석 트포
                 }
                 catch (Exception e) {
-                    MessageBox.Show(e.StackTrace);
+                    //MessageBox.Show(e.StackTrace);
                     return null;
                 }
             });
