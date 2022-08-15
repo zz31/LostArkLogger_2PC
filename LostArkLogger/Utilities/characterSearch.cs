@@ -109,7 +109,7 @@ namespace LostArkLogger.Utilities
                     latestUserList[latestUserPointer] = username;
                     latestUserPointer++;
                     latestUserPointer %= 8;
-                    Console.WriteLine("Add : " + username);
+                    //Console.WriteLine("Add : " + username);
                 }
                 doParse();
             }
@@ -146,7 +146,7 @@ namespace LostArkLogger.Utilities
         public async Task<characterSearchResult> checkMgx(string username)
         {
             if (username == null || username.Length > 12 || username.Trim().Length == 0) { return null; }
-            Console.WriteLine("PARSEmgx >> " + username);
+            //Console.WriteLine("PARSEmgx >> " + username);
             return await Task.Run(() =>
             {
                 try
@@ -452,7 +452,7 @@ namespace LostArkLogger.Utilities
         public async Task<string> checkInven(string username)
         {
             if (username == null || username.Length > 12 || username.Trim().Length == 0) { return null; }
-            Console.WriteLine("PARSEinven >> " + username);
+            //Console.WriteLine("PARSEinven >> " + username);
             return await Task.Run(() =>
             {
                 try
