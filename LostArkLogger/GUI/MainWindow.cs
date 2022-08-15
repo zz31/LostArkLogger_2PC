@@ -147,8 +147,9 @@ namespace LostArkLogger
                 addBgColor.Enabled = true;
                 if (specCheck.Checked == true)
                 {
-                    overlay.specCheckerEnabled = specCheck.Checked;
-                    sniffer.specCheckerEnabled = specCheck.Checked;
+                    overlay.specCheckerEnabled = specCheck.Checked;//enabled일때만 출력
+                    sniffer.specCheckerEnabled = specCheck.Checked;//enabled일때 onnewPC 이벤트 넘김
+                    cSearch.specCheckerEnabled = specCheck.Checked;//enabled일때만 검색
                     cSearch = new CharacterSearch();
                     sniffer.onNewZone += cSearch.resetLatestUser;
                     overlay.getLatestUserInfo += cSearch.getPlayerLast8;
@@ -187,6 +188,7 @@ namespace LostArkLogger
                 } else if (Properties.Settings.Default.Region == LostArkLogger.Region.Korea)
                 {
                     overlay.specCheckerEnabled = specCheck.Checked;
+                    cSearch.specCheckerEnabled = specCheck.Checked;
                     //sniffer.specCheckerEnabled = specCheck.Checked;//off더라도 최근 유저목록은 꾸준히 갱신하고 on했을때 갱신
                     if (specCheck.Checked == true)
                     {

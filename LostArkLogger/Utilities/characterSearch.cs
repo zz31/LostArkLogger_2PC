@@ -16,6 +16,7 @@ namespace LostArkLogger.Utilities
         public Dictionary<string, characterSearchResult> playerDatas = new Dictionary<string, characterSearchResult>();//username, mgxData
         public string[] latestUserList = { null, null, null, null, null, null, null, null };
         public int latestUserPointer = 0;// % 8
+        public bool specCheckerEnabled = false;
         private static readonly object addLock = new object();
         private static readonly object parseLock = new object();
 
@@ -62,7 +63,7 @@ namespace LostArkLogger.Utilities
 
         public void doParse()
         {
-            if (parsing == false && getLvl() == Overlay.Level.Damage)//대미지일때만 체크해서 맨아래쪽에 overlay에서 출력함
+            if (parsing == false && getLvl() == Overlay.Level.Damage && specCheckerEnabled == true)//대미지일때만 체크해서 맨아래쪽에 overlay에서 출력함
             {
                 parsing = true;
                 Task.Run(async () =>
@@ -94,7 +95,7 @@ namespace LostArkLogger.Utilities
                     }
                     catch (Exception e) { }
                     parsing = false;
-                    if (continueFlag == true) doParse();
+                    if (continueFlag == true && specCheckerEnabled == true) doParse();
                 });
             }
         }
@@ -108,7 +109,7 @@ namespace LostArkLogger.Utilities
                     latestUserList[latestUserPointer] = username;
                     latestUserPointer++;
                     latestUserPointer %= 8;
-                    //Console.WriteLine("Add : " + username);
+                    Console.WriteLine("Add : " + username);
                 }
                 doParse();
             }
@@ -145,7 +146,7 @@ namespace LostArkLogger.Utilities
         public async Task<characterSearchResult> checkMgx(string username)
         {
             if (username == null || username.Length > 12 || username.Trim().Length == 0) { return null; }
-            //Console.WriteLine("PARSEmgx >> " + username);
+            Console.WriteLine("PARSEmgx >> " + username);
             return await Task.Run(() =>
             {
                 try
@@ -451,7 +452,7 @@ namespace LostArkLogger.Utilities
         public async Task<string> checkInven(string username)
         {
             if (username == null || username.Length > 12 || username.Trim().Length == 0) { return null; }
-            //Console.WriteLine("PARSEinven >> " + username);
+            Console.WriteLine("PARSEinven >> " + username);
             return await Task.Run(() =>
             {
                 try
