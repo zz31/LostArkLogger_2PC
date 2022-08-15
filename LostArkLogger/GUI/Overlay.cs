@@ -358,7 +358,7 @@ namespace LostArkLogger
                 }
                 if (teamdps != 0) dpsUpdate(teamdps);
 
-                if (specCheckerEnabled == true && level == Level.Damage)
+                if (specCheckerEnabled == true && level == Level.Damage && scope == Scope.TopLevel)
                 {
                     Utilities.CharacterSearch.characterSearchResult[] ulist = getLatestUserInfo();
                     if (ulist != null && ulist.Length != 0)
@@ -409,7 +409,7 @@ namespace LostArkLogger
                 SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
 
                 var index = (int)Math.Floor(e.Location.Y / (float)barHeight - 1);
-                if (index > orderedRows.Count() - 1) return;
+                if (level == Level.Damage && scope == Scope.TopLevel && index > orderedRows.Count() - 1) return;
                 if (index >= 0)// && index <= Damages.Count)
                 {
                     if (scope == Scope.TopLevel)

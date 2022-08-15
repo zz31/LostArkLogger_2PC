@@ -82,7 +82,7 @@
             this.versionLabel.Name = "versionLabel";
             this.versionLabel.Size = new System.Drawing.Size(101, 22);
             this.versionLabel.TabIndex = 10;
-            this.versionLabel.Text = "2022.08.14";
+            this.versionLabel.Text = "2022.08.16";
             this.versionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // regionSelector
