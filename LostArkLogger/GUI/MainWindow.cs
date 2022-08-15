@@ -149,8 +149,8 @@ namespace LostArkLogger
                 {
                     overlay.specCheckerEnabled = specCheck.Checked;//enabled일때만 출력
                     sniffer.specCheckerEnabled = specCheck.Checked;//enabled일때 onnewPC 이벤트 넘김
-                    cSearch.specCheckerEnabled = specCheck.Checked;//enabled일때만 검색
                     cSearch = new CharacterSearch();
+                    cSearch.specCheckerEnabled = specCheck.Checked;//enabled일때만 검색
                     sniffer.onNewZone += cSearch.resetLatestUser;
                     overlay.getLatestUserInfo += cSearch.getPlayerLast8;
                     overlay.updateUserInfo += cSearch.doParse;

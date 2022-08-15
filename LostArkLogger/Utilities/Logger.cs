@@ -17,6 +17,7 @@ namespace LostArkLogger.Utilities
 
         private static readonly object LogFileLock = new object();
         private static readonly object DebugFileLock = new object();
+        private static readonly object packetDumpLock = new object();
         public static string fileName = logsPath + "\\LostArk_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".log";
 
         static Logger()
@@ -33,6 +34,19 @@ namespace LostArkLogger.Utilities
         {
             var log = id + "|" + DateTime.Now.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'") + "|" + String.Join("|", elements);
             onLogAppend?.Invoke(log + "\n");
+        }
+        public static void packetDumper(int opcode, byte[] bytes)
+        {
+            Task.Run(() =>
+            {
+                string s = "";
+                for (int i = 0; i < bytes.Length; i++) s += bytes[i].ToString("X2") +" ";
+                var log = DateTime.Now.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'") + "\n" + s + "\n";
+                lock (packetDumpLock)
+                {
+                    File.AppendAllText(logsPath + "\\"+opcode.ToString()+"_"+opcode.ToString("X")+".log", log);
+                }
+            });
         }
         public static void DoDebugLog(byte[] bytes)
         {

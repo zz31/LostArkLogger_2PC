@@ -39,12 +39,22 @@ namespace LostArkLogger
         public StatusEffectTracker statusEffectTracker;
         public bool isConsoleMode = false;
         public bool specCheckerEnabled = false;
+        //public ushort[] alreadyLoggedOPcodes;
 
         public Parser()
         {
         }
         public void startParse(string nicName)
         {
+            /*
+            string[] files = Directory.GetFiles(@"C:\Users\user\Documents\Lost Ark Logs");
+            List<ushort> opcodelist = new List<ushort>();
+            foreach (string fname in files)
+            {
+                opcodelist.Add(ushort.Parse(fname.Split('\\')[5].Split('_')[0]));
+            }
+            alreadyLoggedOPcodes = opcodelist.ToArray();
+            */
             Encounters.Add(currentEncounter);
             onCombatEvent += Parser_onDamageEvent;
             onNewZone += Parser_onNewZone;
@@ -191,12 +201,15 @@ namespace LostArkLogger
 
         OpCodes GetOpCode(Byte[] packets)
         {
-            var opcodeVal = BitConverter.ToUInt16(packets, 2);
-            var opCodeString = "";
-            if (Properties.Settings.Default.Region == Region.Steam) opCodeString = ((OpCodes_Steam)opcodeVal).ToString();
-            //if (Properties.Settings.Default.Region == Region.Russia) opCodeString = ((OpCodes_ru)opcodeVal).ToString();
-            if (Properties.Settings.Default.Region == Region.Korea) opCodeString = ((OpCodes_Korea)opcodeVal).ToString();
-            return (OpCodes)Enum.Parse(typeof(OpCodes), opCodeString);
+            try
+            {
+                var opcodeVal = BitConverter.ToUInt16(packets, 2);
+                var opCodeString = "";
+                if (Properties.Settings.Default.Region == Region.Steam) opCodeString = ((OpCodes_Steam)opcodeVal).ToString();
+                //if (Properties.Settings.Default.Region == Region.Russia) opCodeString = ((OpCodes_ru)opcodeVal).ToString();
+                if (Properties.Settings.Default.Region == Region.Korea) opCodeString = ((OpCodes_Korea)opcodeVal).ToString();
+                return (OpCodes)Enum.Parse(typeof(OpCodes), opCodeString);
+            } catch(Exception e) { return OpCodes.PACKETPARSEFAILED; }
         }
         Byte[] XorTableSteam = ObjectSerialize.Decompress(Properties.Resources.xor_Steam);
         //Byte[] XorTableRu = ObjectSerialize.Decompress(Properties.Resources.xor_ru);
@@ -267,6 +280,16 @@ namespace LostArkLogger
                     fragmentedPacket = new Byte[0];
                     return;
                 }
+
+                /*!for debug only////////////////////////////////////////
+                UInt16 opNumber = BitConverter.ToUInt16(packets, 2);
+                if (!Enum.IsDefined(typeof(OpCodes_Korea), opNumber)) {
+                    if (!alreadyLoggedOPcodes.Contains(opNumber))
+                    {
+                        Logger.packetDumper(opNumber, payload);
+                    }
+                }
+                *////////////////////////////////////////////////////////
 
                 // write packets for analyzing, bypass common, useless packets
                 // if (opcode != OpCodes.PKTMoveError && opcode != OpCodes.PKTMoveNotify && opcode != OpCodes.PKTMoveNotifyList && opcode != OpCodes.PKTTransitStateNotify && opcode != OpCodes.PKTPing && opcode != OpCodes.PKTPong)
