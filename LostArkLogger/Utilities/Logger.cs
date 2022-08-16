@@ -32,8 +32,19 @@ namespace LostArkLogger.Utilities
         //static bool InittedLog = false;
         public static void httpbridgeSender(int id, params string[] elements)
         {
+            //write logs for loa-details | only works on console-mode
             var log = id + "|" + DateTime.Now.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'") + "|" + String.Join("|", elements);
-            onLogAppend?.Invoke(log + "\n");
+            var logHash = string.Concat(System.Security.Cryptography.MD5.Create().ComputeHash(Encoding.Unicode.GetBytes(log)).Select(x => x.ToString("x2")));
+
+            Task.Run(() =>
+            {
+                lock (LogFileLock)
+                {
+                    File.AppendAllText(fileName, log + "|" + logHash + "\n");
+                }
+
+                onLogAppend?.Invoke(log + "\n");
+            });
         }
         public static void packetDumper(int opcode, byte[] bytes)
         {

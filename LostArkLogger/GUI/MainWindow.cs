@@ -16,6 +16,7 @@ namespace LostArkLogger
         CharacterSearch cSearch;
         private int _packetCount;
         string[] startArgs;
+        private bool consoleMode = false;
         //public event PropertyChangedEventHandler PropertyChanged;
 
         public string PacketCount
@@ -46,6 +47,7 @@ namespace LostArkLogger
             if (args != null && args.Length != 0)
             {
                 this.Text = "CONSOLE MODE";
+                consoleMode = true;
                 specCheck.Visible = false;
                 debugLog.Visible = false;
                 addBgColor.Visible = false;
@@ -95,7 +97,7 @@ namespace LostArkLogger
         {
             Properties.Settings.Default.Region = (Region)Enum.Parse(typeof(Region), regionSelector.Text);
             Properties.Settings.Default.Save();
-            if (Properties.Settings.Default.Region == LostArkLogger.Region.Korea)
+            if (Properties.Settings.Default.Region == LostArkLogger.Region.Korea && consoleMode == false)
             {
                 specCheck.Visible = true;
             } else
