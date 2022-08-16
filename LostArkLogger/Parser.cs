@@ -139,6 +139,18 @@ namespace LostArkLogger
             var hitFlag = (HitFlag)(dmgEvent.Modifier & 0xf);
             if (hitFlag == HitFlag.HIT_FLAG_DAMAGE_SHARE && skillId == 0 && skillEffectId == 0)
                 return;
+            if (!String.IsNullOrEmpty(sourceEntity.ClassName) && sourceEntity.ClassName != "UnknownClass")
+            {
+                // player hasn't been announced on logs before. possibly because user opened logger after they got into a zone
+                if (!currentEncounter.LoggedEntities.ContainsKey(sourceEntity.EntityId))
+                {
+                    // classId is unknown, can be fixed
+                    // level, currenthp and maxhp is unknown
+                    Logger.httpbridgeSender(3, sourceEntity.EntityId.ToString("X"), sourceEntity.Name, "0", sourceEntity.ClassName, "1", "0", "0");
+                    currentEncounter.LoggedEntities.TryAdd(sourceEntity.EntityId, true);
+                }
+            }
+
             var hitOption = (HitOption)(((dmgEvent.Modifier >> 4) & 0x7) - 1);
             var skillName = Skill.GetSkillName(skillId, skillEffectId);
             var targetEntity = currentEncounter.Entities.GetOrAdd(dmgEvent.TargetId);
@@ -166,7 +178,7 @@ namespace LostArkLogger
                 {
                     Logger.httpbridgeSender(8, sourceEntity.EntityId.ToString("X"), sourceEntity.Name, skillId.ToString(), Skill.GetSkillName(skillId), skillEffectId.ToString(), Skill.GetSkillEffectName(skillEffectId), targetEntity.EntityId.ToString("X"), targetEntity.Name, dmgEvent.Damage.ToString(), dmgEvent.Modifier.ToString("X"), dmgEvent.CurHp.ToString(), dmgEvent.MaxHp.ToString());
                 }
-                catch (Exception e) { }
+                catch (Exception e) {  }
             }
         }
         void ProcessSkillDamage(PKTSkillDamageNotify damage)
@@ -466,8 +478,12 @@ namespace LostArkLogger
                     {
                         try
                         {
-                            var gearScore = BitConverter.ToSingle(BitConverter.GetBytes(pc.GearLevel), 0).ToString("0.##");
-                            Logger.httpbridgeSender(3, pc.PlayerId.ToString("X"), pc.Name, pc.ClassId.ToString(), Npc.GetPcClass(pc.ClassId), pc.Level.ToString(), gearScore, pc.statPair.Value[pc.statPair.StatType.IndexOf((Byte)StatType.STAT_TYPE_HP)].ToString(), pc.statPair.Value[pc.statPair.StatType.IndexOf((Byte)StatType.STAT_TYPE_MAX_HP)].ToString());
+                            if (!currentEncounter.LoggedEntities.ContainsKey(pc.PlayerId))
+                            {
+                                var gearScore = BitConverter.ToSingle(BitConverter.GetBytes(pc.GearLevel), 0).ToString("0.##");
+                                Logger.httpbridgeSender(3, pc.PlayerId.ToString("X"), pc.Name, pc.ClassId.ToString(), Npc.GetPcClass(pc.ClassId), pc.Level.ToString(), gearScore, pc.statPair.Value[pc.statPair.StatType.IndexOf((Byte)StatType.STAT_TYPE_HP)].ToString(), pc.statPair.Value[pc.statPair.StatType.IndexOf((Byte)StatType.STAT_TYPE_MAX_HP)].ToString());
+                                currentEncounter.LoggedEntities.TryAdd(pc.PlayerId, true);
+                            }
                         }
                         catch (Exception e) { }
                     }
@@ -498,8 +514,12 @@ namespace LostArkLogger
                     {
                         try
                         {
-                            var gearScore = BitConverter.ToSingle(BitConverter.GetBytes(pc.GearLevel), 0).ToString("0.##");
-                            Logger.httpbridgeSender(3, pc.PlayerId.ToString("X"), temp.Name, pc.ClassId.ToString(), Npc.GetPcClass(pc.ClassId), pc.Level.ToString(), gearScore, pc.statPair.Value[pc.statPair.StatType.IndexOf((Byte)StatType.STAT_TYPE_HP)].ToString(), pc.statPair.Value[pc.statPair.StatType.IndexOf((Byte)StatType.STAT_TYPE_MAX_HP)].ToString());
+                            if (!currentEncounter.LoggedEntities.ContainsKey(pc.PlayerId))
+                            {
+                                var gearScore = BitConverter.ToSingle(BitConverter.GetBytes(pc.GearLevel), 0).ToString("0.##");
+                                Logger.httpbridgeSender(3, pc.PlayerId.ToString("X"), temp.Name, pc.ClassId.ToString(), Npc.GetPcClass(pc.ClassId), pc.Level.ToString(), gearScore, pc.statPair.Value[pc.statPair.StatType.IndexOf((Byte)StatType.STAT_TYPE_HP)].ToString(), pc.statPair.Value[pc.statPair.StatType.IndexOf((Byte)StatType.STAT_TYPE_MAX_HP)].ToString());
+                                currentEncounter.LoggedEntities.TryAdd(pc.PlayerId, true);
+                            }
                         }
                         catch (Exception e) { }
                     }

@@ -25,8 +25,9 @@ namespace LostArkLogger
             EnqueueMessage(0, "Arguments: " + String.Join(",", args));
 
             // Configure the monitor with command-line arguments.
-            var RegionIndex = Array.IndexOf(args, "--Region");
-            var NpcapIndex = Array.IndexOf(args, "--UseNpcap");
+            //var RegionIndex = Array.IndexOf(args, "--Region");
+            //var NpcapIndex = Array.IndexOf(args, "--UseNpcap");
+            //-> not used, Npcap only
             var PortIndex = Array.IndexOf(args, "--Port");
 
             if (PortIndex != -1)
@@ -92,13 +93,21 @@ namespace LostArkLogger
             {
                 if (this.messageQueue.TryDequeue(out var sendMessage))
                 {
-                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:" + Port);
-                    request.Content = new StringContent(sendMessage);
-                    var mediaTypeHeaderValue = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
-                    mediaTypeHeaderValue.CharSet = "utf-8";
-                    request.Content.Headers.ContentType = mediaTypeHeaderValue;
+                    try
+                    {
+                        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:" + Port);
+                        request.Content = new StringContent(sendMessage);
+                        var mediaTypeHeaderValue = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+                        mediaTypeHeaderValue.CharSet = "utf-8";
+                        request.Content.Headers.ContentType = mediaTypeHeaderValue;
 
-                    await this.http.SendAsync(request);
+                        await this.http.SendAsync(request);
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Trying to requeue message");
+                        this.messageQueue.Enqueue(sendMessage);
+                    }
                 }
                 else
                 {

@@ -46,6 +46,10 @@ namespace LostArkLogger
             if (args != null && args.Length != 0)
             {
                 this.Text = "CONSOLE MODE";
+                specCheck.Visible = false;
+                debugLog.Visible = false;
+                addBgColor.Visible = false;
+                MessageBox.Show("Select nic and region to link with loa detail.");
             }
         }
 

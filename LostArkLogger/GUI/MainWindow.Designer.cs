@@ -47,7 +47,7 @@
             this.loggedPacketCountLabel.Location = new System.Drawing.Point(10, 9);
             this.loggedPacketCountLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.loggedPacketCountLabel.Name = "loggedPacketCountLabel";
-            this.loggedPacketCountLabel.Size = new System.Drawing.Size(121, 12);
+            this.loggedPacketCountLabel.Size = new System.Drawing.Size(178, 12);
             this.loggedPacketCountLabel.TabIndex = 2;
             this.loggedPacketCountLabel.Text = "Packets: 0";
             // 
@@ -80,7 +80,7 @@
             this.versionLabel.Location = new System.Drawing.Point(11, 69);
             this.versionLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.versionLabel.Name = "versionLabel";
-            this.versionLabel.Size = new System.Drawing.Size(101, 22);
+            this.versionLabel.Size = new System.Drawing.Size(150, 22);
             this.versionLabel.TabIndex = 10;
             this.versionLabel.Text = "2022.08.16";
             this.versionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -143,11 +143,11 @@
             this.addBgColor.Checked = true;
             this.addBgColor.CheckState = System.Windows.Forms.CheckState.Checked;
             this.addBgColor.Enabled = false;
-            this.addBgColor.Location = new System.Drawing.Point(120, 72);
+            this.addBgColor.Location = new System.Drawing.Point(169, 73);
             this.addBgColor.Name = "addBgColor";
-            this.addBgColor.Size = new System.Drawing.Size(152, 16);
+            this.addBgColor.Size = new System.Drawing.Size(102, 16);
             this.addBgColor.TabIndex = 17;
-            this.addBgColor.Text = "addBackground(black)";
+            this.addBgColor.Text = "addBG(black)";
             this.addBgColor.UseVisualStyleBackColor = true;
             this.addBgColor.CheckedChanged += new System.EventHandler(this.addBgColor_CheckedChanged);
             // 
