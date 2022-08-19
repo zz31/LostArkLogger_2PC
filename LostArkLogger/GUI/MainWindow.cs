@@ -52,6 +52,19 @@ namespace LostArkLogger
                 debugLog.Visible = false;
                 addBgColor.Visible = false;
                 MessageBox.Show("Select nic and region to link with loa detail.");
+            } else
+            {
+                if (Properties.Settings.Default.LockedNICname.Length > 0 && Properties.Settings.Default.LockedRegionName.Length > 0)
+                {
+                    regionSelector.SelectedItem = Properties.Settings.Default.LockedRegionName;
+                    nicListBox.SelectedItem = Properties.Settings.Default.LockedNICname;
+                    cbox_lockNic.Checked = true;
+                }
+                if (Properties.Settings.Default.LogEnabled == true)
+                {
+                    enableLogger_notice = true;
+                    cboxEnableLogger.Checked = true;
+                }
             }
         }
 
@@ -68,29 +81,6 @@ namespace LostArkLogger
         private void debugLog_CheckedChanged(object sender, EventArgs e)
         {
             Logger.debugLog = debugLog.Checked;
-        }
-
-        private void checkUpdate_Click(object sender, EventArgs e)
-        {
-            using (var wc = new WebClient())
-            {
-                wc.Headers["User-Agent"] = "LostArkLogger";
-                var json = wc.DownloadString(@"https://api.github.com/repos/shalzuth/LostArkLogger/releases/latest");
-                var version = json.Substring(json.IndexOf("tag_name") + 11);
-                version = version.Substring(0, version.IndexOf("\""));
-                if (version == System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString()) MessageBox.Show("Current version is up to date : " + version, "Version Info");
-                else
-                {
-                    var exeUrl = json.Substring(json.IndexOf("browser_download_url") + 23);
-                    exeUrl = exeUrl.Substring(0, exeUrl.IndexOf("\""));
-                    var curFileName = System.Diagnostics.Process.GetCurrentProcess().MainModule.ModuleName;
-                    if (File.Exists(curFileName + ".old")) File.Delete(curFileName + ".old");
-                    File.Move(curFileName, curFileName + ".old"); // need to delete this old breadcrumb elegantly. maybe on app start. not going to solve right now.
-                    wc.DownloadFile(exeUrl, curFileName);
-                    System.Diagnostics.Process.Start(curFileName);
-                    Environment.Exit(0);
-                }
-            }
         }
 
         private void regionSelector_SelectedIndexChanged(object sender, EventArgs e)
@@ -122,13 +112,30 @@ namespace LostArkLogger
 
         private void MainWindow_Load(object sender, EventArgs e)
         {
-            this.Location = new System.Drawing.Point(0, 0);
+            if (Properties.Settings.Default.OverlayPos_Right == true)
+            {
+                this.Location = new System.Drawing.Point(0, 0);
+            } else
+            {
+                this.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width - this.Width, 0);
+            }
         }
 
         private void nicListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             nicListBox.Enabled = false;
+            nicListBox.Visible = false;
             regionSelector.Enabled = false;
+            regionSelector.Visible = false;
+            if (regionSelector.SelectedItem.ToString() == "Korea")
+            {
+                MessageBox.Show("XOR 키와 OP코드가 업데이트로 변경되어 현재 KR서버에선 작동하지 않습니다.");
+                Properties.Settings.Default.LockedNICname = "";
+                Properties.Settings.Default.LockedRegionName = "";
+                Properties.Settings.Default.Save();
+                Environment.Exit(Environment.ExitCode);
+                return;
+            }
             if (startArgs != null && startArgs.Length != 0)
             {
                 this.Visible = false;
@@ -141,11 +148,16 @@ namespace LostArkLogger
                 sniffer.onPacketTotalCount += (int totalPacketCount) =>
                 {
                     _packetCount = totalPacketCount;
-                    //PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PacketCount)));
                 };
                 overlay = new Overlay();
                 overlay.Show();
-                overlay.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width / 2, 0);
+                if (Properties.Settings.Default.OverlayPos_Right == true)
+                {
+                    overlay.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width / 2, 0);
+                } else
+                {
+                    overlay.Location = new System.Drawing.Point(0, 0);
+                }
                 overlay.Size = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Width / 2, Screen.PrimaryScreen.Bounds.Height);
                 sniffer.startParse(nicListBox.SelectedItem.ToString());
                 overlay.AddSniffer(sniffer);
@@ -168,6 +180,13 @@ namespace LostArkLogger
                 {
                     specCheck.Enabled = false;
                 }
+                cbox_lockNic.Enabled = true;
+                cbox_lockNic.Visible = true;
+                lblSetBGColor.Enabled = true;
+                cbox_lockNic.Text = regionSelector.SelectedItem.ToString() + " / "+ nicListBox.SelectedItem.ToString();
+                cboxEnableLogger.Enabled = true;
+                versionLabel.Enabled = true;
+
                 timer1.Enabled = true;
             }
         }
@@ -211,6 +230,73 @@ namespace LostArkLogger
         private void addBgColor_CheckedChanged(object sender, EventArgs e)
         {
             overlay.addBGColor = addBgColor.Checked;
+        }
+
+        private void cbox_lockNic_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cbox_lockNic.Checked == true)
+            {
+                Properties.Settings.Default.LockedNICname = nicListBox.SelectedItem.ToString();
+                Properties.Settings.Default.LockedRegionName = regionSelector.SelectedItem.ToString();
+                Properties.Settings.Default.Save();
+            } else
+            {
+                Properties.Settings.Default.LockedNICname = "";
+                Properties.Settings.Default.LockedRegionName = "";
+                Properties.Settings.Default.Save();
+            }
+        }
+
+        private void lblSetBGColor_Click(object sender, EventArgs e)
+        {
+            ColorDialog MyDialog = new ColorDialog();
+            MyDialog.AllowFullOpen = false;
+            MyDialog.ShowHelp = true;
+            MyDialog.Color = lblSetBGColor.ForeColor;
+            if (MyDialog.ShowDialog() == DialogResult.OK)
+            {
+                lblSetBGColor.ForeColor = MyDialog.Color;
+                Properties.Settings.Default.BackgroundColor = MyDialog.Color;
+                overlay.bgColor = new System.Drawing.SolidBrush(MyDialog.Color);
+                overlay.updateUI();
+                Properties.Settings.Default.Save();
+            }
+        }
+
+        private bool enableLogger_notice = false;
+        private void cboxEnableLogger_CheckedChanged(object sender, EventArgs e)
+        {
+            if (enableLogger_notice == false)
+            {
+                switch(Properties.Settings.Default.Region)
+                {
+                    case LostArkLogger.Region.Korea:
+                        MessageBox.Show("해당 기능은 Loa details용으로 로그를 생성하는 기능입니다.\n로그 생성 시 나중에 Loa Details로 전투 기록을 확인할 수 있습니다.");
+                        break;
+                    case LostArkLogger.Region.Steam:
+                        MessageBox.Show("Generates logs that are compatible with Loa-details,\nyou can check combat history with Loa-details later.");
+                        break;
+                }
+                enableLogger_notice = true;
+            }
+            Properties.Settings.Default.LogEnabled = cboxEnableLogger.Checked;
+            Properties.Settings.Default.Save();
+        }
+
+        private void versionLabel_Click(object sender, EventArgs e)
+        {
+            if (Properties.Settings.Default.OverlayPos_Right == true)
+            {
+                this.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width - this.Width, 0);
+                overlay.Location = new System.Drawing.Point(0, 0);
+                Properties.Settings.Default.OverlayPos_Right = false;
+            } else
+            {
+                this.Location = new System.Drawing.Point(0, 0);
+                overlay.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width / 2, 0);
+                Properties.Settings.Default.OverlayPos_Right = true;
+            }
+            Properties.Settings.Default.Save();
         }
     }
 }

@@ -39,6 +39,7 @@ namespace LostArkLogger
         public StatusEffectTracker statusEffectTracker;
         public bool isConsoleMode = false;
         public bool specCheckerEnabled = false;
+        public bool logEnabled = false;
         //public ushort[] alreadyLoggedOPcodes;
 
         public Parser()
@@ -87,7 +88,13 @@ namespace LostArkLogger
                     {
                         pcap_strerror(1); // verify winpcap works at all
                         gameInterface = NetworkUtil.GetAdapterUsedByProcess(nicName);
-                        if (gameInterface == null) { MessageBox.Show("selected nic was not exist"); Environment.Exit(0); }
+                        if (gameInterface == null) {
+                            Properties.Settings.Default.LockedNICname = "";
+                            Properties.Settings.Default.LockedRegionName = "";
+                            Properties.Settings.Default.Save();
+                            MessageBox.Show("The selected NIC does not exist.");
+                            Environment.Exit(0);
+                        }
                         foreach (var device in CaptureDeviceList.Instance)
                         {
                             if (device.MacAddress == null) continue; // SharpPcap.IPCapDevice.MacAddress is null in some cases
@@ -117,19 +124,8 @@ namespace LostArkLogger
                     // If we failed to find a pcap device, fall back to rawsockets.
                     if (!foundAdapter)
                     {
-                        use_npcap = false;
                         pcap = null;
                     }
-                }
-
-                if (use_npcap == false)
-                {
-                    // Always fall back to rawsockets
-                    tcp = new Machina.TCPNetworkMonitor();
-                    tcp.Config.WindowClass = "EFLaunchUnrealUWindowsClient";
-                    monitorType = tcp.Config.MonitorType = Machina.Infrastructure.NetworkMonitorType.RawSocket;
-                    tcp.DataReceivedEventHandler += (Machina.Infrastructure.TCPConnection connection, byte[] data) => Device_OnPacketArrival_machina(connection, data);
-                    tcp.Start();
                 }
             }
         }
@@ -139,16 +135,23 @@ namespace LostArkLogger
             var hitFlag = (HitFlag)(dmgEvent.Modifier & 0xf);
             if (hitFlag == HitFlag.HIT_FLAG_DAMAGE_SHARE && skillId == 0 && skillEffectId == 0)
                 return;
-            if (!String.IsNullOrEmpty(sourceEntity.ClassName) && sourceEntity.ClassName != "UnknownClass")
+            if (isConsoleMode == true || Properties.Settings.Default.LogEnabled == true)
             {
-                // player hasn't been announced on logs before. possibly because user opened logger after they got into a zone
-                if (!currentEncounter.LoggedEntities.ContainsKey(sourceEntity.EntityId))
+                try
                 {
-                    // classId is unknown, can be fixed
-                    // level, currenthp and maxhp is unknown
-                    Logger.httpbridgeSender(3, sourceEntity.EntityId.ToString("X"), sourceEntity.Name, "0", sourceEntity.ClassName, "1", "0", "0");
-                    currentEncounter.LoggedEntities.TryAdd(sourceEntity.EntityId, true);
+                    if (!String.IsNullOrEmpty(sourceEntity.ClassName) && sourceEntity.ClassName != "UnknownClass")
+                    {
+                        // player hasn't been announced on logs before. possibly because user opened logger after they got into a zone
+                        if (!currentEncounter.LoggedEntities.ContainsKey(sourceEntity.EntityId))
+                        {
+                            // classId is unknown, can be fixed
+                            // level, currenthp and maxhp is unknown
+                            Logger.httpbridgeSender(3, sourceEntity.EntityId.ToString("X"), sourceEntity.Name, "0", sourceEntity.ClassName, "1", "0", "0");
+                            currentEncounter.LoggedEntities.TryAdd(sourceEntity.EntityId, true);
+                        }
+                    }
                 }
+                catch (Exception e) { }
             }
 
             var hitOption = (HitOption)(((dmgEvent.Modifier >> 4) & 0x7) - 1);
@@ -172,7 +175,7 @@ namespace LostArkLogger
             onCombatEvent?.Invoke(log);
             currentEncounter.RaidInfos.Add(log);
             if (isConsoleMode == false && targetEntity.Type != Entity.EntityType.Player) onHpChange(dmgEvent.CurHp, dmgEvent.MaxHp);
-            if (isConsoleMode == true)
+            if (isConsoleMode == true || Properties.Settings.Default.LogEnabled == true)
             {
                 try
                 {
@@ -365,7 +368,7 @@ namespace LostArkLogger
                     currentEncounter.Entities.AddOrUpdate(temp);
 
                     onNewZone?.Invoke();
-                    if (isConsoleMode == true)
+                    if (isConsoleMode == true || Properties.Settings.Default.LogEnabled == true)
                     {
                         try
                         {
@@ -439,7 +442,7 @@ namespace LostArkLogger
                             Encounters.Remove(Encounters.Last());
                         }
                         Encounters.Add(currentEncounter);
-                        if (isConsoleMode == true)
+                        if (isConsoleMode == true || Properties.Settings.Default.LogEnabled == true)
                         {
                             try
                             {
@@ -474,7 +477,7 @@ namespace LostArkLogger
 
                     statusEffectTracker.InitPc(pc);
                     onNewZone?.Invoke();
-                    if (isConsoleMode == true)
+                    if (isConsoleMode == true || Properties.Settings.Default.LogEnabled == true)
                     {
                         try
                         {
@@ -510,7 +513,7 @@ namespace LostArkLogger
                     currentEncounter.PartyEntities[temp.PartyId] = temp;
 
                     statusEffectTracker.NewPc(pcPacket);
-                    if (isConsoleMode)
+                    if (isConsoleMode || Properties.Settings.Default.LogEnabled == true)
                     {
                         try
                         {
@@ -536,7 +539,7 @@ namespace LostArkLogger
                         Type = Entity.EntityType.Npc
                     });
 
-                    if (isConsoleMode)
+                    if (isConsoleMode || Properties.Settings.Default.LogEnabled == true)
                     {
                         try
                         {
@@ -555,7 +558,7 @@ namespace LostArkLogger
                 else if (opcode == OpCodes.PKTDeathNotify)
                 {
                     var death = new PKTDeathNotify(new BitReader(payload));
-                    if (isConsoleMode)
+                    if (isConsoleMode || Properties.Settings.Default.LogEnabled == true)
                     {
                         try
                         {
@@ -586,7 +589,7 @@ namespace LostArkLogger
                 else if (opcode == OpCodes.PKTSkillStartNotify)
                 {
                     var skill = new PKTSkillStartNotify(new BitReader(payload));
-                    if (isConsoleMode)
+                    if (isConsoleMode || Properties.Settings.Default.LogEnabled == true)
                     {
                         try
                         {
@@ -614,7 +617,7 @@ namespace LostArkLogger
                         5 on suc 6 on fail
                     */
                     var skill = new PKTSkillStageNotify(new BitReader(payload));
-                    if (isConsoleMode)
+                    if (isConsoleMode || Properties.Settings.Default.LogEnabled == true)
                     {
                         try
                         {
@@ -640,7 +643,7 @@ namespace LostArkLogger
                     };
                     onCombatEvent?.Invoke(log);
                     // might push this by 1??
-                    if (isConsoleMode)
+                    if (isConsoleMode || Properties.Settings.Default.LogEnabled == true)
                     {
                         try
                         {
@@ -706,7 +709,7 @@ namespace LostArkLogger
                         Counter = true
                     };
                     onCombatEvent?.Invoke(log);
-                    if (isConsoleMode)
+                    if (isConsoleMode || Properties.Settings.Default.LogEnabled == true)
                     {
                         try
                         {
@@ -810,7 +813,7 @@ namespace LostArkLogger
                 Duration = duration
             };
             currentEncounter.Infos.Add(log);
-            if (isConsoleMode)
+            if (isConsoleMode || Properties.Settings.Default.LogEnabled == true)
             {
                 try
                 {
@@ -821,7 +824,7 @@ namespace LostArkLogger
         }
         private void StatusEffectTracker_OnStatusEffectStarted(StatusEffect statusEffect)
         {
-            if (isConsoleMode)
+            if (isConsoleMode || Properties.Settings.Default.LogEnabled == true)
             {
                 try
                 {

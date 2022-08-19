@@ -40,6 +40,9 @@
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.specCheck = new System.Windows.Forms.CheckBox();
             this.addBgColor = new System.Windows.Forms.CheckBox();
+            this.lblSetBGColor = new System.Windows.Forms.Label();
+            this.cbox_lockNic = new System.Windows.Forms.CheckBox();
+            this.cboxEnableLogger = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // loggedPacketCountLabel
@@ -77,13 +80,16 @@
             // 
             // versionLabel
             // 
+            this.versionLabel.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.versionLabel.Enabled = false;
             this.versionLabel.Location = new System.Drawing.Point(11, 69);
             this.versionLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.versionLabel.Name = "versionLabel";
-            this.versionLabel.Size = new System.Drawing.Size(150, 22);
+            this.versionLabel.Size = new System.Drawing.Size(92, 22);
             this.versionLabel.TabIndex = 10;
-            this.versionLabel.Text = "2022.08.16";
+            this.versionLabel.Text = "2022.08.19";
             this.versionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.versionLabel.Click += new System.EventHandler(this.versionLabel_Click);
             // 
             // regionSelector
             // 
@@ -139,23 +145,62 @@
             // 
             // addBgColor
             // 
-            this.addBgColor.AutoSize = true;
             this.addBgColor.Checked = true;
             this.addBgColor.CheckState = System.Windows.Forms.CheckState.Checked;
             this.addBgColor.Enabled = false;
-            this.addBgColor.Location = new System.Drawing.Point(169, 73);
+            this.addBgColor.Location = new System.Drawing.Point(180, 73);
             this.addBgColor.Name = "addBgColor";
-            this.addBgColor.Size = new System.Drawing.Size(102, 16);
+            this.addBgColor.Size = new System.Drawing.Size(65, 16);
             this.addBgColor.TabIndex = 17;
-            this.addBgColor.Text = "addBG(black)";
+            this.addBgColor.Text = "addBG";
             this.addBgColor.UseVisualStyleBackColor = true;
             this.addBgColor.CheckedChanged += new System.EventHandler(this.addBgColor_CheckedChanged);
+            // 
+            // lblSetBGColor
+            // 
+            this.lblSetBGColor.AutoSize = true;
+            this.lblSetBGColor.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.lblSetBGColor.Enabled = false;
+            this.lblSetBGColor.Location = new System.Drawing.Point(236, 74);
+            this.lblSetBGColor.Name = "lblSetBGColor";
+            this.lblSetBGColor.Size = new System.Drawing.Size(35, 12);
+            this.lblSetBGColor.TabIndex = 18;
+            this.lblSetBGColor.Text = "Color";
+            this.lblSetBGColor.Click += new System.EventHandler(this.lblSetBGColor_Click);
+            // 
+            // cbox_lockNic
+            // 
+            this.cbox_lockNic.Enabled = false;
+            this.cbox_lockNic.Location = new System.Drawing.Point(12, 48);
+            this.cbox_lockNic.Name = "cbox_lockNic";
+            this.cbox_lockNic.Size = new System.Drawing.Size(259, 16);
+            this.cbox_lockNic.TabIndex = 19;
+            this.cbox_lockNic.Text = "Lock NIC/Region";
+            this.cbox_lockNic.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.cbox_lockNic.UseVisualStyleBackColor = true;
+            this.cbox_lockNic.Visible = false;
+            this.cbox_lockNic.CheckedChanged += new System.EventHandler(this.cbox_lockNic_CheckedChanged);
+            // 
+            // cboxEnableLogger
+            // 
+            this.cboxEnableLogger.AutoSize = true;
+            this.cboxEnableLogger.Enabled = false;
+            this.cboxEnableLogger.Location = new System.Drawing.Point(111, 73);
+            this.cboxEnableLogger.Name = "cboxEnableLogger";
+            this.cboxEnableLogger.Size = new System.Drawing.Size(63, 16);
+            this.cboxEnableLogger.TabIndex = 20;
+            this.cboxEnableLogger.Text = "Logger";
+            this.cboxEnableLogger.UseVisualStyleBackColor = true;
+            this.cboxEnableLogger.CheckedChanged += new System.EventHandler(this.cboxEnableLogger_CheckedChanged);
             // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 98);
+            this.Controls.Add(this.cboxEnableLogger);
+            this.Controls.Add(this.cbox_lockNic);
+            this.Controls.Add(this.lblSetBGColor);
             this.Controls.Add(this.addBgColor);
             this.Controls.Add(this.specCheck);
             this.Controls.Add(this.nicListBox);
@@ -188,5 +233,8 @@
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.CheckBox specCheck;
         private System.Windows.Forms.CheckBox addBgColor;
+        private System.Windows.Forms.Label lblSetBGColor;
+        private System.Windows.Forms.CheckBox cbox_lockNic;
+        private System.Windows.Forms.CheckBox cboxEnableLogger;
     }
 }

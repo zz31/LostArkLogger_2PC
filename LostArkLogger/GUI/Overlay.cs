@@ -102,6 +102,7 @@ namespace LostArkLogger
         List<Brush> brushes = new List<Brush>();
         Brush black = new SolidBrush(Color.White);
         Brush dark = new SolidBrush(Color.Black);
+        public Brush bgColor = new SolidBrush(Properties.Settings.Default.BackgroundColor);
         Brush warn = new SolidBrush(Color.Red);
         void InitPens()
         {
@@ -310,7 +311,7 @@ namespace LostArkLogger
                     var rowText = playerDmg.Key;
                     var barWidth = ((Single)playerDmg.Value.Item1 / maxDamage) * Size.Width;
                     //if (barWidth < .3f) continue;
-                    if (addBGColor) e.Graphics.FillRectangle(dark, 0, (i + 1) * barHeight, Size.Width, barHeight);//add black background
+                    if (addBGColor) e.Graphics.FillRectangle(bgColor, 0, (i + 1) * barHeight, Size.Width, barHeight);//add black background
                     e.Graphics.FillRectangle(brushes[i % brushes.Count], 0, (i + 1) * barHeight, barWidth, barHeight);
                     var dps_num = (ulong)(playerDmg.Value.Item1 / elapsed);
                     var dps = FormatNumber(dps_num);
@@ -367,7 +368,7 @@ namespace LostArkLogger
                         {
                             if (i%2 == 0)
                             {
-                                e.Graphics.FillRectangle(dark, 0, (orderedRows.Count() + (i * 2) + 1) * barHeight, Size.Width, barHeight * 2);
+                                e.Graphics.FillRectangle(bgColor, 0, (orderedRows.Count() + (i * 2) + 1) * barHeight, Size.Width, barHeight * 2);
                             } else
                             {
                                 e.Graphics.FillRectangle(black, 0, (orderedRows.Count() + (i * 2) + 1) * barHeight, Size.Width, barHeight * 2);
