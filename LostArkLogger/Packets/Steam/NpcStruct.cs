@@ -9,7 +9,7 @@ namespace LostArkLogger
             u64_0 = reader.ReadUInt64();
             b_0 = reader.ReadByte();
             if (b_0 == 1)
-                NpcType = reader.ReadUInt32();
+                u32_2 = reader.ReadUInt32();
             b_11 = reader.ReadByte();
             if (b_11 == 1)
                 b_12 = reader.ReadByte();
@@ -63,7 +63,7 @@ namespace LostArkLogger
             b_17 = reader.ReadByte();
             if (b_17 == 1)
                 u32_1 = reader.ReadUInt32();
-            u32_2 = reader.ReadUInt32();
+            NpcType = reader.ReadUInt32();
             b_18 = reader.ReadByte();
             u16_2 = reader.ReadUInt16();
             statPair = reader.Read<StatPair>();
