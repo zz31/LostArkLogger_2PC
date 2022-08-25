@@ -95,7 +95,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Utilities\BitReader.cs" />
-    <Compile Include="Utilities\characterSearch.cs" />
     <Compile Include="Utilities\HttpBridge.cs" />
     <Compile Include="Utilities\Logger.cs" />
     <Compile Include="Utilities\ManagedIpHelper.cs" />

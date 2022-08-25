@@ -13,10 +13,8 @@ namespace LostArkLogger
         Parser sniffer;
         Overlay overlay;
         HttpBridge httpBridge;
-        CharacterSearch cSearch;
         private int _packetCount;
         string[] startArgs;
-        private bool consoleMode = false;
         //public event PropertyChangedEventHandler PropertyChanged;
 
         public string PacketCount
@@ -47,8 +45,6 @@ namespace LostArkLogger
             if (args != null && args.Length != 0)
             {
                 this.Text = "CONSOLE MODE";
-                consoleMode = true;
-                specCheck.Visible = false;
                 debugLog.Visible = false;
                 addBgColor.Visible = false;
                 MessageBox.Show("Select nic and region to link with loa detail.");
@@ -87,13 +83,6 @@ namespace LostArkLogger
         {
             Properties.Settings.Default.Region = (Region)Enum.Parse(typeof(Region), regionSelector.Text);
             Properties.Settings.Default.Save();
-            if (Properties.Settings.Default.Region == LostArkLogger.Region.Korea && consoleMode == false)
-            {
-                specCheck.Visible = true;
-            } else
-            {
-                specCheck.Visible = false;
-            }
             //Environment.Exit(0);
         }
 
@@ -101,7 +90,6 @@ namespace LostArkLogger
         {
             Properties.Settings.Default.DisplayNames = displayName.Checked;
             Properties.Settings.Default.Save();
-
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -127,15 +115,6 @@ namespace LostArkLogger
             nicListBox.Visible = false;
             regionSelector.Enabled = false;
             regionSelector.Visible = false;
-            if (regionSelector.SelectedItem.ToString() == "Korea")
-            {
-                MessageBox.Show("XOR 키와 OP코드가 업데이트로 변경되어 현재 KR서버에선 작동하지 않습니다.");
-                Properties.Settings.Default.LockedNICname = "";
-                Properties.Settings.Default.LockedRegionName = "";
-                Properties.Settings.Default.Save();
-                Environment.Exit(Environment.ExitCode);
-                return;
-            }
             if (startArgs != null && startArgs.Length != 0)
             {
                 this.Visible = false;
@@ -163,23 +142,7 @@ namespace LostArkLogger
                 overlay.AddSniffer(sniffer);
                 sniffer.onHpChange += overlay.onhpUpdate;
                 addBgColor.Enabled = true;
-                if (specCheck.Checked == true)
-                {
-                    overlay.specCheckerEnabled = specCheck.Checked;//enabled일때만 출력
-                    sniffer.specCheckerEnabled = specCheck.Checked;//enabled일때 onnewPC 이벤트 넘김
-                    cSearch = new CharacterSearch();
-                    cSearch.specCheckerEnabled = specCheck.Checked;//enabled일때만 검색
-                    sniffer.onNewZone += cSearch.resetLatestUser;
-                    overlay.getLatestUserInfo += cSearch.getPlayerLast8;
-                    overlay.updateUserInfo += cSearch.doParse;
-                    cSearch.getLvl += overlay.GetLevel;
-                    cSearch.onDataUpdated += overlay.updateUI;
-                    sniffer.onNewPC += cSearch.onNewPC;
-                }
-                else if (specCheck.Checked == false)
-                {
-                    specCheck.Enabled = false;
-                }
+
                 cbox_lockNic.Enabled = true;
                 cbox_lockNic.Visible = true;
                 lblSetBGColor.Enabled = true;
@@ -188,42 +151,6 @@ namespace LostArkLogger
                 versionLabel.Enabled = true;
 
                 timer1.Enabled = true;
-            }
-        }
-
-        private void specCheck_CheckedChanged(object sender, EventArgs e)
-        {
-            if (nicListBox.Enabled == true)
-            {
-                if (specCheck.Checked == true && Properties.Settings.Default.Region == LostArkLogger.Region.Steam)
-                {
-                    specCheck.Checked = false;
-                    MessageBox.Show("This function uses an external website api to check other players information. So it only works on the KR server.");
-                } else if (specCheck.Checked == true && Properties.Settings.Default.Region == LostArkLogger.Region.Korea)
-                {
-                    MessageBox.Show("해당 기능은 외부 웹사이트 api를 이용합니다.\n미터기를 실행한 PC가 인터넷에 연결되어 있지 않다면 오류만 나고 작동하지 않으니, 해당 기능을 해제해 주세요.\n\n또한, 현재 오류로 이벤트 보석은 보석 없음으로 표기되니 참고바랍니다.");
-                }
-            } else if (nicListBox.Enabled == false)
-            {
-                if (specCheck.Checked == true && Properties.Settings.Default.Region == LostArkLogger.Region.Steam)
-                {
-                    specCheck.Enabled = false;
-                    specCheck.Checked = false;
-                    MessageBox.Show("This function uses an external website api to check other players information. So it only works on the KR server.");
-                } else if (Properties.Settings.Default.Region == LostArkLogger.Region.Korea)
-                {
-                    overlay.specCheckerEnabled = specCheck.Checked;
-                    cSearch.specCheckerEnabled = specCheck.Checked;
-                    //sniffer.specCheckerEnabled = specCheck.Checked;//off더라도 최근 유저목록은 꾸준히 갱신하고 on했을때 갱신
-                    if (specCheck.Checked == true)
-                    {
-                        overlay.updateUI();
-                        cSearch.doParse();
-                    } else
-                    {
-                        overlay.updateUI();
-                    }
-                }
             }
         }
 

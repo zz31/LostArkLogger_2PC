@@ -34,15 +34,8 @@ namespace LostArkLogger
 
         public Level level = Level.Damage;
         public Scope scope = Scope.TopLevel;
-        public bool specCheckerEnabled = false;
         public bool addBGColor = true;
-        internal Func<Utilities.CharacterSearch.characterSearchResult[]> getLatestUserInfo;
-        internal Action updateUserInfo;
 
-        public Level GetLevel()
-        {
-            return level;
-        }
         public Overlay()
         {
             InitPens();
@@ -83,7 +76,6 @@ namespace LostArkLogger
         Encounter encounter;
         Entity SubEntity;
         Font font = new Font("Helvetica", 10);
-        Font fontWarn = new Font("Helvetica", 10, FontStyle.Bold);
         internal Func<UInt64, string> FormatNumber;
         internal Func<Int64, string> FormatNumber_i;
 
@@ -360,44 +352,6 @@ namespace LostArkLogger
                     e.Graphics.DrawString(formattedDmg, font, black, Size.Width - edge.Width, (i + 1) * barHeight + heightBuffer);
                 }
                 if (teamdps != 0) dpsUpdate(teamdps);
-
-                if (specCheckerEnabled == true && level == Level.Damage && scope == Scope.TopLevel)
-                {
-                    Utilities.CharacterSearch.characterSearchResult[] ulist = getLatestUserInfo();
-                    if (ulist != null && ulist.Length != 0)
-                    {
-                        for (int i = 0; i < ulist.Length; i++)
-                        {
-                            if (i%2 == 0)
-                            {
-                                e.Graphics.FillRectangle(bgColor, 0, (orderedRows.Count() + (i * 2) + 1) * barHeight, Size.Width, barHeight * 2);
-                            } else
-                            {
-                                e.Graphics.FillRectangle(black, 0, (orderedRows.Count() + (i * 2) + 1) * barHeight, Size.Width, barHeight * 2);
-                            }
-                            string inv_str = (ulist[i].resultInven == null) ? "" : ulist[i].resultInven;
-                            if (ulist[i].resultWarn.Contains("[경고]"))
-                            {
-                                e.Graphics.DrawString(ulist[i].resultTitle, fontWarn, warn, 5, (orderedRows.Count() + (i * 2) + 1) * barHeight + heightBuffer);
-                                e.Graphics.DrawString(inv_str +" "+ ulist[i].resultWarn, fontWarn, warn, Size.Width - e.Graphics.MeasureString(inv_str + " " + ulist[i].resultWarn, fontWarn).Width, (orderedRows.Count() + (i * 2) + 1) * barHeight + heightBuffer);
-                                e.Graphics.DrawString(ulist[i].resultContent, font, warn, 5, (orderedRows.Count() + (i * 2) + 2) * barHeight + heightBuffer);
-                            } else
-                            {
-                                if (i%2 == 0)
-                                {
-                                    e.Graphics.DrawString(ulist[i].resultTitle, fontWarn, black, 5, (orderedRows.Count() + (i * 2) + 1) * barHeight + heightBuffer);
-                                    e.Graphics.DrawString(inv_str, fontWarn, warn, Size.Width - e.Graphics.MeasureString(inv_str, fontWarn).Width, (orderedRows.Count() + (i * 2) + 1) * barHeight + heightBuffer);
-                                    e.Graphics.DrawString(ulist[i].resultContent, font, black, 5, (orderedRows.Count() + (i * 2) + 2) * barHeight + heightBuffer);
-                                } else
-                                {
-                                    e.Graphics.DrawString(ulist[i].resultTitle, fontWarn, dark, 5, (orderedRows.Count() + (i * 2) + 1) * barHeight + heightBuffer);
-                                    e.Graphics.DrawString(inv_str, fontWarn, warn, Size.Width - e.Graphics.MeasureString(inv_str, fontWarn).Width, (orderedRows.Count() + (i * 2) + 1) * barHeight + heightBuffer);
-                                    e.Graphics.DrawString(ulist[i].resultContent, font, dark, 5, (orderedRows.Count() + (i * 2) + 2) * barHeight + heightBuffer);
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
         [DllImport("user32.dll")] static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
@@ -412,7 +366,7 @@ namespace LostArkLogger
                 SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
 
                 var index = (int)Math.Floor(e.Location.Y / (float)barHeight - 1);
-                if (level == Level.Damage && scope == Scope.TopLevel && index > orderedRows.Count() - 1) return;
+                //if (level == Level.Damage && scope == Scope.TopLevel && index > orderedRows.Count() - 1) return;
                 if (index >= 0)// && index <= Damages.Count)
                 {
                     if (scope == Scope.TopLevel)
@@ -457,7 +411,6 @@ namespace LostArkLogger
             else level--;
             if (level == Level.None) level = Level.Max - 1;
             else if (level == Level.Max) level = Level.None + 1;
-            if (level == Level.Damage && specCheckerEnabled == true) updateUserInfo();
             Invalidate();
         }
         void SwitchOverlay(Level type)

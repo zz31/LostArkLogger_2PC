@@ -95,7 +95,7 @@ namespace LostArkLogger
                     Verb = "runas"
                 };
                 try { Process.Start(startInfo); }
-                catch (Exception ex) { MessageBox.Show("This program must be run as an administrator!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+                catch (Exception) { MessageBox.Show("This program must be run as an administrator!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error); }
                 return false;
             }
             return true;

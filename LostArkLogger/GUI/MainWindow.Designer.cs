@@ -38,7 +38,6 @@
             this.displayName = new System.Windows.Forms.CheckBox();
             this.nicListBox = new System.Windows.Forms.ComboBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.specCheck = new System.Windows.Forms.CheckBox();
             this.addBgColor = new System.Windows.Forms.CheckBox();
             this.lblSetBGColor = new System.Windows.Forms.Label();
             this.cbox_lockNic = new System.Windows.Forms.CheckBox();
@@ -87,7 +86,7 @@
             this.versionLabel.Name = "versionLabel";
             this.versionLabel.Size = new System.Drawing.Size(92, 22);
             this.versionLabel.TabIndex = 10;
-            this.versionLabel.Text = "2022.08.19";
+            this.versionLabel.Text = "2022.08.25";
             this.versionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.versionLabel.Click += new System.EventHandler(this.versionLabel_Click);
             // 
@@ -131,18 +130,6 @@
             this.timer1.Interval = 500;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
-            // specCheck
-            // 
-            this.specCheck.AutoSize = true;
-            this.specCheck.Location = new System.Drawing.Point(80, 24);
-            this.specCheck.Name = "specCheck";
-            this.specCheck.Size = new System.Drawing.Size(84, 16);
-            this.specCheck.TabIndex = 16;
-            this.specCheck.Text = "스펙검사기";
-            this.specCheck.UseVisualStyleBackColor = true;
-            this.specCheck.Visible = false;
-            this.specCheck.CheckedChanged += new System.EventHandler(this.specCheck_CheckedChanged);
-            // 
             // addBgColor
             // 
             this.addBgColor.Checked = true;
@@ -185,7 +172,7 @@
             // 
             this.cboxEnableLogger.AutoSize = true;
             this.cboxEnableLogger.Enabled = false;
-            this.cboxEnableLogger.Location = new System.Drawing.Point(111, 73);
+            this.cboxEnableLogger.Location = new System.Drawing.Point(80, 24);
             this.cboxEnableLogger.Name = "cboxEnableLogger";
             this.cboxEnableLogger.Size = new System.Drawing.Size(63, 16);
             this.cboxEnableLogger.TabIndex = 20;
@@ -202,7 +189,6 @@
             this.Controls.Add(this.cbox_lockNic);
             this.Controls.Add(this.lblSetBGColor);
             this.Controls.Add(this.addBgColor);
-            this.Controls.Add(this.specCheck);
             this.Controls.Add(this.nicListBox);
             this.Controls.Add(this.displayName);
             this.Controls.Add(this.regionSelector);
@@ -231,7 +217,6 @@
         private System.Windows.Forms.CheckBox displayName;
         private System.Windows.Forms.ComboBox nicListBox;
         private System.Windows.Forms.Timer timer1;
-        private System.Windows.Forms.CheckBox specCheck;
         private System.Windows.Forms.CheckBox addBgColor;
         private System.Windows.Forms.Label lblSetBGColor;
         private System.Windows.Forms.CheckBox cbox_lockNic;

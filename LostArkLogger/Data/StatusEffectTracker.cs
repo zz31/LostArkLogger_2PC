@@ -77,7 +77,7 @@ namespace LostArkLogger
                 }
                 effectList.TryAdd(statusEffect.InstanceId, statusEffect);
                 OnStatusEffectStarted(statusEffect);
-            } catch(Exception e) { }
+            } catch(Exception) { }
         }
 
         public void Add(PKTStatusEffectAddNotify effect)
