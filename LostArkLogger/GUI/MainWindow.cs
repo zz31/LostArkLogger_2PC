@@ -29,7 +29,7 @@ namespace LostArkLogger
             Oodle.Init();
             if (!Directory.Exists("logs")) Directory.CreateDirectory("logs");
             regionSelector.DataSource = Enum.GetValues(typeof(Region));
-            regionSelector.SelectedIndex = (int)Properties.Settings.Default.Region;
+            regionSelector.SelectedItem = Properties.Settings.Default.Region;
             regionSelector.SelectedIndexChanged += new EventHandler(regionSelector_SelectedIndexChanged);
             loggedPacketCountLabel.Text = "Packets: 0";
             //loggedPacketCountLabel.DataBindings.Add("Text", this, nameof(PacketCount));
@@ -47,20 +47,25 @@ namespace LostArkLogger
                 this.Text = "CONSOLE MODE";
                 debugLog.Visible = false;
                 addBgColor.Visible = false;
-                MessageBox.Show("Select nic and region to link with loa detail.");
+                cboxEnableLogger.Visible = false;
+                lblSetBGColor.Visible = false;
+                if (Properties.Settings.Default.LockedNICname.Length == 0 && Properties.Settings.Default.LockedRegionName.Length == 0)
+                {
+                    MessageBox.Show("Select nic and region to link with loa detail.");
+                }
             } else
             {
-                if (Properties.Settings.Default.LockedNICname.Length > 0 && Properties.Settings.Default.LockedRegionName.Length > 0)
-                {
-                    regionSelector.SelectedItem = Properties.Settings.Default.LockedRegionName;
-                    nicListBox.SelectedItem = Properties.Settings.Default.LockedNICname;
-                    cbox_lockNic.Checked = true;
-                }
                 if (Properties.Settings.Default.LogEnabled == true)
                 {
                     enableLogger_notice = true;
                     cboxEnableLogger.Checked = true;
                 }
+            }
+            if (Properties.Settings.Default.LockedNICname.Length > 0 && Properties.Settings.Default.LockedRegionName.Length > 0)
+            {
+                regionSelector.SelectedItem = Properties.Settings.Default.LockedRegionName;
+                nicListBox.SelectedItem = Properties.Settings.Default.LockedNICname;
+                cbox_lockNic.Checked = true;
             }
         }
 
@@ -79,8 +84,14 @@ namespace LostArkLogger
             Logger.debugLog = debugLog.Checked;
         }
 
+        private bool rs_init = false;
         private void regionSelector_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (rs_init == false)
+            {//block init index change event
+                rs_init = true;
+                return;
+            }
             Properties.Settings.Default.Region = (Region)Enum.Parse(typeof(Region), regionSelector.Text);
             Properties.Settings.Default.Save();
             //Environment.Exit(0);
