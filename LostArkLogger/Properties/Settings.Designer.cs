@@ -142,5 +142,17 @@ namespace LostArkLogger.Properties {
                 this["OverlayPos_Right"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string OverlayStartInfo {
+            get {
+                return ((string)(this["OverlayStartInfo"]));
+            }
+            set {
+                this["OverlayStartInfo"] = value;
+            }
+        }
     }
 }

@@ -49,6 +49,7 @@ namespace LostArkLogger
                 addBgColor.Visible = false;
                 cboxEnableLogger.Visible = false;
                 lblSetBGColor.Visible = false;
+                cb_saveOverlayInfo.Visible = false;
                 if (Properties.Settings.Default.LockedNICname.Length == 0 && Properties.Settings.Default.LockedRegionName.Length == 0)
                 {
                     MessageBox.Show("Select nic and region to link with loa detail.");
@@ -141,14 +142,29 @@ namespace LostArkLogger
                 };
                 overlay = new Overlay();
                 overlay.Show();
-                if (Properties.Settings.Default.OverlayPos_Right == true)
+                string[] overlayStartinfo = Properties.Settings.Default.OverlayStartInfo.Split('|');
+                bool overlayErr = false;
+                try
                 {
-                    overlay.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width / 2, 0);
-                } else
-                {
-                    overlay.Location = new System.Drawing.Point(0, 0);
-                }
-                overlay.Size = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Width / 2, Screen.PrimaryScreen.Bounds.Height);
+                    if (overlayStartinfo?.Length == 4)
+                    {
+                        overlay.Location = new System.Drawing.Point(int.Parse(overlayStartinfo[2]), int.Parse(overlayStartinfo[3]));
+                        overlay.Size = new System.Drawing.Size(int.Parse(overlayStartinfo[0]), int.Parse(overlayStartinfo[1]));
+                    }
+                    else { overlayErr = true; }
+                } catch(Exception) { overlayErr = true; }
+
+                if (overlayErr == true) {
+                    if (Properties.Settings.Default.OverlayPos_Right == true)
+                    {
+                        overlay.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width / 2, 0);
+                    }
+                    else
+                    {
+                        overlay.Location = new System.Drawing.Point(0, 0);
+                    }
+                    overlay.Size = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Width / 2, Screen.PrimaryScreen.Bounds.Height);
+                } 
                 sniffer.startParse(nicListBox.SelectedItem.ToString());
                 overlay.AddSniffer(sniffer);
                 sniffer.onHpChange += overlay.onhpUpdate;
@@ -157,7 +173,8 @@ namespace LostArkLogger
                 cbox_lockNic.Enabled = true;
                 cbox_lockNic.Visible = true;
                 lblSetBGColor.Enabled = true;
-                cbox_lockNic.Text = regionSelector.SelectedItem.ToString() + " / "+ nicListBox.SelectedItem.ToString();
+                cb_saveOverlayInfo.Enabled = true;
+                cbox_lockNic.Text = "Use Current NIC/Region setting\n("+ regionSelector.SelectedItem.ToString() + " / "+ nicListBox.SelectedItem.ToString()+")";
                 cboxEnableLogger.Enabled = true;
                 versionLabel.Enabled = true;
 
@@ -233,6 +250,18 @@ namespace LostArkLogger
                 this.Location = new System.Drawing.Point(0, 0);
                 overlay.Location = new System.Drawing.Point(Screen.PrimaryScreen.Bounds.Width / 2, 0);
                 Properties.Settings.Default.OverlayPos_Right = true;
+            }
+            Properties.Settings.Default.Save();
+        }
+
+        private void cb_saveOverlayInfo_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cb_saveOverlayInfo.Checked == true)
+            {
+                Properties.Settings.Default.OverlayStartInfo = overlay.Width.ToString() + "|" + overlay.Height.ToString() + "|" + overlay.Left.ToString() + "|" + overlay.Top.ToString();
+            } else
+            {
+                Properties.Settings.Default.OverlayStartInfo = "";
             }
             Properties.Settings.Default.Save();
         }
