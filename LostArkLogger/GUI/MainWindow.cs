@@ -150,8 +150,13 @@ namespace LostArkLogger
                     {
                         overlay.Location = new System.Drawing.Point(int.Parse(overlayStartinfo[2]), int.Parse(overlayStartinfo[3]));
                         overlay.Size = new System.Drawing.Size(int.Parse(overlayStartinfo[0]), int.Parse(overlayStartinfo[1]));
+                        cb_saveOverlayInfo.Checked = true;
                     }
-                    else { overlayErr = true; }
+                    else {
+                        Properties.Settings.Default.OverlayStartInfo = "";
+                        Properties.Settings.Default.Save();
+                        overlayErr = true;
+                    }
                 } catch(Exception) { overlayErr = true; }
 
                 if (overlayErr == true) {
