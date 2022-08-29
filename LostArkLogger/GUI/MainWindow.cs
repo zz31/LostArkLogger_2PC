@@ -15,6 +15,8 @@ namespace LostArkLogger
         HttpBridge httpBridge;
         private int _packetCount;
         string[] startArgs;
+        System.Collections.Generic.List<int> ints = new System.Collections.Generic.List<int>();//check first access 
+
         //public event PropertyChangedEventHandler PropertyChanged;
 
         public string PacketCount
@@ -45,11 +47,15 @@ namespace LostArkLogger
             if (args != null && args.Length != 0)
             {
                 this.Text = "CONSOLE MODE";
-                debugLog.Visible = false;
-                addBgColor.Visible = false;
-                cboxEnableLogger.Visible = false;
-                lblSetBGColor.Visible = false;
-                cb_saveOverlayInfo.Visible = false;
+                hideControl(debugLog);
+                hideControl(addBgColor);
+                hideControl(cboxEnableLogger);
+                hideControl(lblSetBGColor);
+                hideControl(cb_saveOverlayInfo);
+                hideControl(radioButton1);
+                hideControl(radioButton2);
+                hideControl(radioButton3);
+                hideControl(cbox_lockNic);
                 if (Properties.Settings.Default.LockedNICname.Length == 0 && Properties.Settings.Default.LockedRegionName.Length == 0)
                 {
                     MessageBox.Show("Select nic and region to link with loa detail.");
@@ -58,18 +64,50 @@ namespace LostArkLogger
             {
                 if (Properties.Settings.Default.LogEnabled == true)
                 {
-                    enableLogger_notice = true;
-                    cboxEnableLogger.Checked = true;
+                    isFirstAccess(2);//enable logger notify check = 2
+                    settingSync(Properties.Settings.Default.LogEnabled, cboxEnableLogger);
                 }
             }
             if (Properties.Settings.Default.LockedNICname.Length > 0 && Properties.Settings.Default.LockedRegionName.Length > 0)
             {
                 regionSelector.SelectedItem = Properties.Settings.Default.LockedRegionName;
                 nicListBox.SelectedItem = Properties.Settings.Default.LockedNICname;
-                cbox_lockNic.Checked = true;
+                settingSync(true, cbox_lockNic);
             }
         }
 
+        private bool isFirstAccess(int id)
+        {
+            if (ints.Contains(id))
+            {
+                return false;//not first
+            } else
+            {
+                ints.Add(id);
+                return true;//first
+            }
+        }
+        private void settingSyncRadio(int n, RadioButton[] radios)
+        {
+            try
+            {
+                radios[n].Select();
+            } catch (Exception) { } 
+        }
+        private void settingSync(bool isChecked, CheckBox target)
+        {
+            target.Checked = isChecked;
+        }
+        private void showControl(Control control)
+        {
+            control.Visible = true;
+            control.Enabled = true;
+        }
+        private void hideControl(Control control)
+        {
+            control.Enabled = false;
+            control.Visible = false;
+        }
         private void form_CloseAll(object sender, FormClosedEventArgs e)
         {
             Environment.Exit(Environment.ExitCode);
@@ -85,17 +123,11 @@ namespace LostArkLogger
             Logger.debugLog = debugLog.Checked;
         }
 
-        private bool rs_init = false;
         private void regionSelector_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (rs_init == false)
-            {//block init index change event
-                rs_init = true;
-                return;
-            }
+            if (isFirstAccess(1) == true) { return; }//A unique number for that function(1).
             Properties.Settings.Default.Region = (Region)Enum.Parse(typeof(Region), regionSelector.Text);
             Properties.Settings.Default.Save();
-            //Environment.Exit(0);
         }
 
         private void displayName_CheckedChanged(object sender, EventArgs e)
@@ -123,10 +155,8 @@ namespace LostArkLogger
 
         private void nicListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            nicListBox.Enabled = false;
-            nicListBox.Visible = false;
-            regionSelector.Enabled = false;
-            regionSelector.Visible = false;
+            hideControl(nicListBox);
+            hideControl(regionSelector);
             if (startArgs != null && startArgs.Length != 0)
             {
                 this.Visible = false;
@@ -173,15 +203,22 @@ namespace LostArkLogger
                 sniffer.startParse(nicListBox.SelectedItem.ToString());
                 overlay.AddSniffer(sniffer);
                 sniffer.onHpChange += overlay.onhpUpdate;
-                addBgColor.Enabled = true;
+                sniffer.setElapsedTime += overlay.elapsedTimeUpdate;
+                sniffer.onNewZone += overlay.resetAddonValue;
 
-                cbox_lockNic.Enabled = true;
-                cbox_lockNic.Visible = true;
-                lblSetBGColor.Enabled = true;
-                cb_saveOverlayInfo.Enabled = true;
-                cbox_lockNic.Text = "Use Current NIC/Region setting\n("+ regionSelector.SelectedItem.ToString() + " / "+ nicListBox.SelectedItem.ToString()+")";
-                cboxEnableLogger.Enabled = true;
-                versionLabel.Enabled = true;
+                showControl(addBgColor);
+                cbox_lockNic.Text = "Use Current NIC/Region setting\n(" + regionSelector.SelectedItem.ToString() + " / " + nicListBox.SelectedItem.ToString() + ")";
+                showControl(cbox_lockNic);
+                lblSetBGColor.ForeColor = Properties.Settings.Default.BackgroundColor;
+                showControl(lblSetBGColor);
+                showControl(cb_saveOverlayInfo);
+                settingSyncRadio(Properties.Settings.Default.ElapsedTimeType, new RadioButton[] { radioButton1, radioButton2, radioButton3 });
+                showControl(radioButton1);
+                showControl(radioButton2);
+                showControl(radioButton3);
+                settingSync(Properties.Settings.Default.LogEnabled, cboxEnableLogger);
+                showControl(cboxEnableLogger);
+                showControl(versionLabel);
 
                 timer1.Enabled = true;
             }
@@ -223,12 +260,11 @@ namespace LostArkLogger
             }
         }
 
-        private bool enableLogger_notice = false;
         private void cboxEnableLogger_CheckedChanged(object sender, EventArgs e)
         {
-            if (enableLogger_notice == false)
-            {
-                switch(Properties.Settings.Default.Region)
+            if (isFirstAccess(2) == true)
+            {//A unique number for that function(2).
+                switch (Properties.Settings.Default.Region)
                 {
                     case LostArkLogger.Region.Korea:
                         MessageBox.Show("해당 기능은 Loa details용으로 로그를 생성하는 기능입니다.\n로그 생성 시 나중에 Loa Details로 전투 기록을 확인할 수 있습니다.");
@@ -237,7 +273,6 @@ namespace LostArkLogger
                         MessageBox.Show("Generates logs that are compatible with Loa-details,\nyou can check combat history with Loa-details later.");
                         break;
                 }
-                enableLogger_notice = true;
             }
             Properties.Settings.Default.LogEnabled = cboxEnableLogger.Checked;
             Properties.Settings.Default.Save();
@@ -269,6 +304,28 @@ namespace LostArkLogger
                 Properties.Settings.Default.OverlayStartInfo = "";
             }
             Properties.Settings.Default.Save();
+        }
+
+        private void rb_changed(int selected)
+        {
+            Properties.Settings.Default.ElapsedTimeType = selected;//0:default 1:entity 2:dmgpacket
+            Properties.Settings.Default.Save();
+            sniffer.useNewEtime = Properties.Settings.Default.ElapsedTimeType;
+            overlay.useNewEtime = Properties.Settings.Default.ElapsedTimeType;
+        }
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+            rb_changed(0);
+        }
+
+        private void radioButton2_CheckedChanged(object sender, EventArgs e)
+        {
+            rb_changed(1);
+        }
+
+        private void radioButton3_CheckedChanged(object sender, EventArgs e)
+        {
+            rb_changed(2);
         }
     }
 }

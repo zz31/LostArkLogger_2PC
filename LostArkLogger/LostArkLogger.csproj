@@ -139,9 +139,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="HtmlAgilityPack">
-      <Version>1.11.43</Version>
-    </PackageReference>
     <PackageReference Include="K4os.Compression.LZ4">
       <Version>1.2.16</Version>
     </PackageReference>

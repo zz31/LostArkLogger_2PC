@@ -23,12 +23,14 @@ namespace LostArkLogger
         public event Action onNewZone;
         public event Action beforeNewZone;
         public event Action<int> onPacketTotalCount;
-        internal Action<long, long> onHpChange;
+        internal Action<UInt64, UInt64> onHpChange;
+        internal Action<UInt64> setElapsedTime;
         public bool use_npcap = true;
         private object lockPacketProcessing = new object(); // needed to synchronize UI swapping devices
         public Machina.Infrastructure.NetworkMonitorType? monitorType = null;
         public List<Encounter> Encounters = new List<Encounter>();
         public Encounter currentEncounter = new Encounter();
+        private System.Collections.Concurrent.ConcurrentDictionary<ulong, UInt64[]> entityElapsedTimeDict = new System.Collections.Concurrent.ConcurrentDictionary<ulong, UInt64[]>();
         Byte[] fragmentedPacket = new Byte[0];
         private string _localPlayerName = "You";
         private uint _localGearLevel = 0;
@@ -38,6 +40,7 @@ namespace LostArkLogger
         public StatusEffectTracker statusEffectTracker;
         public bool isConsoleMode = false;
         public bool logEnabled = false;
+        public int useNewEtime = 0;//0:def 1:entity 2:damagepacket
         //public ushort[] alreadyLoggedOPcodes;
 
         public Parser()
@@ -174,9 +177,38 @@ namespace LostArkLogger
                 BackAttack = hitOption == HitOption.HIT_OPTION_BACK_ATTACK,
                 FrontAttack = hitOption == HitOption.HIT_OPTION_FRONTAL_ATTACK
             };
+
+            //calculate real entity time
+            if (useNewEtime != 0 && targetEntity.Type != Entity.EntityType.Player)
+            {
+                ulong tid = (useNewEtime == 1) ? dmgEvent.TargetId : 1;
+                //1 : entity hit event
+                //2 : damage event = lock to id 1
+                entityElapsedTimeDict.AddOrUpdate(tid, new UInt64[2] { 1, 0 }, (k, v) =>
+                {
+                    UInt64 cv = (UInt64)(DateTime.Now.Ticks / 10000000);
+                    if (cv - v[1] >= 1)//if diff 1sec
+                    {
+                        if (v[0] > 5) setElapsedTime(v[0] + 1);//ignore trash mobs elapsed time
+                        return new UInt64[2] { v[0]+1, cv };//add 1 sec, save last timestamp
+                    } else
+                    {//getoradd -> update is better? or current function is better??..
+                        return v;
+                    }
+                });
+            }
+            //
+            
             onCombatEvent?.Invoke(log);
             currentEncounter.RaidInfos.Add(log);
-            if (isConsoleMode == false && targetEntity.Type != Entity.EntityType.Player) onHpChange(dmgEvent.CurHp, dmgEvent.MaxHp);
+            if (isConsoleMode == false && targetEntity.Type != Entity.EntityType.Player)
+            {
+                var c = dmgEvent.CurHp;
+                var m = dmgEvent.MaxHp;
+                if (c < 0) c = 0;
+                if (m < 0) m = 0;
+                onHpChange((UInt64)c, (UInt64)m);
+            }
             try
             {
                 toHttpBridge(8, sourceEntity.EntityId.ToString("X"), sourceEntity.Name, skillId.ToString(), Skill.GetSkillName(skillId), skillEffectId.ToString(), Skill.GetSkillEffectName(skillEffectId), targetEntity.EntityId.ToString("X"), targetEntity.Name, dmgEvent.Damage.ToString(), dmgEvent.Modifier.ToString("X"), dmgEvent.CurHp.ToString(), dmgEvent.MaxHp.ToString());
@@ -835,7 +867,9 @@ namespace LostArkLogger
         private void Parser_onNewZone()
         {
             //Logger.StartNewLogFile();
+            //todo : add rewrite logfile setting.. (after xxMin Re-create new log file)
             loggedPacketCount = 0;
+            entityElapsedTimeDict.Clear();//clear entity time
         }
 
         public Entity GetSourceEntity(UInt64 sourceId)
