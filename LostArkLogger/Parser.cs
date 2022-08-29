@@ -41,6 +41,7 @@ namespace LostArkLogger
         public bool isConsoleMode = false;
         public bool logEnabled = false;
         public int useNewEtime = 0;//0:def 1:entity 2:damagepacket
+        private static readonly object etimelock = new object();
         //public ushort[] alreadyLoggedOPcodes;
 
         public Parser()
@@ -181,21 +182,25 @@ namespace LostArkLogger
             //calculate real entity time
             if (isConsoleMode == false && useNewEtime != 0 && targetEntity.Type != Entity.EntityType.Player)
             {
-                ulong tid = (useNewEtime == 1) ? dmgEvent.TargetId : 1;
-                //1 : entity hit event
-                //2 : damage event = lock to id 1
-                entityElapsedTimeDict.AddOrUpdate(tid, new UInt64[2] { 1, 0 }, (k, v) =>
+                lock (etimelock)
                 {
-                    UInt64 cv = (UInt64)(DateTime.Now.Ticks / 10000000);
-                    if (cv - v[1] >= 1)//if diff 1sec
+                    ulong tid = (useNewEtime == 1) ? dmgEvent.TargetId : 1;
+                    //1 : entity hit event
+                    //2 : damage event = lock to id 1
+                    entityElapsedTimeDict.AddOrUpdate(tid, new UInt64[2] { 1, 0 }, (k, v) =>
                     {
-                        if (v[0] > 5) setElapsedTime(v[0] + 1);//ignore trash mobs elapsed time
-                        return new UInt64[2] { v[0]+1, cv };//add 1 sec, save last timestamp
-                    } else
-                    {//getoradd -> update is better? or current function is better??..
-                        return v;
-                    }
-                });
+                        UInt64 cv = (UInt64)(DateTime.Now.Ticks / 10000000);
+                        if (cv - v[1] >= 1)//if diff 1sec
+                        {
+                            if (v[0] > 5) setElapsedTime(v[0] + 1);//ignore trash mobs elapsed time
+                            return new UInt64[2] { v[0] + 1, cv };//add 1 sec, save last timestamp
+                        }
+                        else
+                        {//getoradd -> update is better? or current function is better??..
+                            return v;
+                        }
+                    });
+                }
             }
             //
             
@@ -869,7 +874,10 @@ namespace LostArkLogger
             //Logger.StartNewLogFile();
             //todo : add rewrite logfile setting.. (after xxMin Re-create new log file)
             loggedPacketCount = 0;
-            entityElapsedTimeDict.Clear();//clear entity time
+            lock (etimelock)
+            {
+                entityElapsedTimeDict.Clear();//clear entity time
+            }
         }
 
         public Entity GetSourceEntity(UInt64 sourceId)
