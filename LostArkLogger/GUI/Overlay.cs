@@ -176,8 +176,11 @@ namespace LostArkLogger
                 }
             }
             UInt64 etime = (useNewEtime == 0) ? elapsedTime_default : elapsedTime_New;
+            if (etime == 0) return;
             UInt64 tdps = (totalDamage - deadPlayerDamage) / etime;
+            if (tdps == 0) return;
             UInt64 t = chp / tdps;
+
 
             hp_str = "[ "+FormatNumber(chp)+"  /  "+FormatNumber(mhp)+" HP ] "+etime.ToString()+"S Elapsed";
             estTime_str = FormatNumber(tdps)+" | ~"+ (t / 60).ToString() + "M " + (t % 60) + "S";
