@@ -179,7 +179,7 @@ namespace LostArkLogger
             };
 
             //calculate real entity time
-            if (useNewEtime != 0 && targetEntity.Type != Entity.EntityType.Player)
+            if (isConsoleMode == false && useNewEtime != 0 && targetEntity.Type != Entity.EntityType.Player)
             {
                 ulong tid = (useNewEtime == 1) ? dmgEvent.TargetId : 1;
                 //1 : entity hit event
