@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Threading.Tasks;
 
 namespace LostArkLogger
 {
@@ -127,38 +128,54 @@ namespace LostArkLogger
         private UInt64 elapsedTime_New = 0;
         private bool updated = false;
         public int useNewEtime = 0;
-        private string hp_str = "Damage";
+        private string hp_str = "";
+        private string tdps_str = "";
         private string estTime_str = "";
+        private bool resetting = false;
         public void resetAddonValue()
         {
-            chp = 0;
-            mhp = 0;
-            totalDamage = 0;
-            elapsedTime_default = 0;
-            elapsedTime_New = 0;
-            updated = false;
-            hp_str = "Damage";
-            estTime_str = "";
+            resetting = true;
+            Task.Run(async () =>
+            {
+                await Task.Delay(1500);
+                try
+                {
+                    chp = 0;
+                    mhp = 0;
+                    totalDamage = 0;
+                    elapsedTime_default = 0;
+                    elapsedTime_New = 0;
+                    updated = false;
+                    hp_str = "";
+                    estTime_str = "";
+                    Invalidate();
+                    resetting = false;
+                } catch (Exception) { resetting = false; } finally { resetting = false; }
+            });
         }
         public void onhpUpdate(UInt64 a, UInt64 b)
         {
+            if (resetting) return;
             chp = a;
             mhp = b;
             updated = true;
         }
         private void teamDmgUpdate(UInt64 tdmg, UInt64 etime)
         {
+            if (resetting) return;
             totalDamage = tdmg;
             elapsedTime_default = etime;
             updated = true;
         }
         public void elapsedTimeUpdate(UInt64 etime)
         {
+            if (resetting) return;
             elapsedTime_New = etime;
             updated = true;
         }
         public void tryUpdate()
         {
+            if (resetting) return;
             if (encounter == null || updated != true || mhp == 0 || totalDamage == 0 ||
                 (useNewEtime == 0 && elapsedTime_default == 0) ||
                 (useNewEtime != 0 && elapsedTime_New == 0)) return;
@@ -179,11 +196,13 @@ namespace LostArkLogger
             if (etime == 0) return;
             UInt64 tdps = (totalDamage - deadPlayerDamage) / etime;
             if (tdps == 0) return;
-            UInt64 t = chp / tdps;
+            UInt64 t = (chp / tdps);
+            UInt64 t2 = t + etime;
 
 
-            hp_str = "[ "+FormatNumber(chp)+"  /  "+FormatNumber(mhp)+" HP ] "+etime.ToString()+"S Elapsed";
-            estTime_str = FormatNumber(tdps)+" | ~"+ (t / 60).ToString() + "M " + (t % 60) + "S";
+            hp_str = "[ "+FormatNumber(chp)+"  /  "+FormatNumber(mhp)+" HP ]";
+            tdps_str = "Team DPS "+FormatNumber(tdps);
+            estTime_str = (etime / 60).ToString("00") + ":" + (etime % 60).ToString("00") + " / Est. " + (t2 / 60).ToString("00") + ":" + (t2 % 60).ToString("00") +"(+"+(t/60).ToString("00")+":"+(t%60).ToString("00")+")";
         }
         public void updateUI()
         {
@@ -214,6 +233,7 @@ namespace LostArkLogger
                 int barWidth = (int)((rowData.Value.Item1 / elapsed) * Size.Width);
                 var nameOffset = 0;
                 var infoString = $"{rowData.Value.Item1}s {((rowData.Value.Item1 * 100) / elapsed):0.#}%";
+                if (addBGColor) e.Graphics.FillRectangle(bgColor, 0, (i + 1) * barHeight, Size.Width, barHeight);//add background
                 e.Graphics.FillRectangle(brushes[i % brushes.Count], 0, (i + 1) * barHeight, barWidth, barHeight);
                 if (rowData.Key.Contains('(') && scope == Scope.TopLevel)
                 {
@@ -244,10 +264,11 @@ namespace LostArkLogger
             var titleBar = e.Graphics.MeasureString(title, font);
             var heightBuffer = (barHeight - titleBar.Height) / 2;
 
-            if (level == Level.Damage && scope == Scope.TopLevel && hp_str != "Damage")
+            if (level == Level.Damage && scope == Scope.TopLevel && hp_str.Length != 0)
             {
                 e.Graphics.DrawString(hp_str, font, black, 5, heightBuffer);
-                e.Graphics.DrawString(estTime_str, font, black, this.Width - e.Graphics.MeasureString(estTime_str, font).Width - 55, heightBuffer);
+                e.Graphics.DrawString(estTime_str, font, black, (this.Width/2) - ((e.Graphics.MeasureString(estTime_str, font).Width/2)), heightBuffer);
+                e.Graphics.DrawString(tdps_str, font, black, this.Width - e.Graphics.MeasureString(tdps_str, font).Width - 55, heightBuffer);
             } else
             {
                 e.Graphics.DrawString(title, font, black, 5, heightBuffer);
@@ -324,7 +345,7 @@ namespace LostArkLogger
                     var rowText = playerDmg.Key;
                     var barWidth = ((Single)playerDmg.Value.Item1 / maxDamage) * Size.Width;
                     //if (barWidth < .3f) continue;
-                    if (addBGColor) e.Graphics.FillRectangle(bgColor, 0, (i + 1) * barHeight, Size.Width, barHeight);//add black background
+                    if (addBGColor) e.Graphics.FillRectangle(bgColor, 0, (i + 1) * barHeight, Size.Width, barHeight);//add background
                     e.Graphics.FillRectangle(brushes[i % brushes.Count], 0, (i + 1) * barHeight, barWidth, barHeight);
                     var dps = FormatNumber((ulong)(playerDmg.Value.Item1 / elapsed));
                     if (playerDmg.Value.Item4 > 0)
