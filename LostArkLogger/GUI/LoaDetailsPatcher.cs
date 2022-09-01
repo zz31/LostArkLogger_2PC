@@ -19,18 +19,19 @@ namespace LostArkLogger.GUI
         }
 
         bool patchToForkedVersion = true;
+        string binaryName = "ae92984b-6f1b-4b0d-ad31-504e1905d5e6.exe";
+        string oo2Name = "oo2net_9_win64.dll";
         public void showNotice()
         {
-            MessageBox.Show("if you're running loa-details, exit loa-details first.\n\n"+
-                "running process's filename can't be changed so if you're wanna roll back to original binary, "+
-                "copy this exe and paste same folder and run it.", "Notice");
+            MessageBox.Show("if you're running loa-details, exit loa-details first.\n"+
+                "because running process's filename can't be changed. \n\n"+
+                "Also, for the same reason, when reverting from the fork version to the original binary,\n"+
+                "needs copy and paste this exe for create another file and use it.", "Notice");
         }
         private void button1_Click(object sender, EventArgs e)
         {
             string path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\Programs\loa-details\";
             string binaryPath = path + @"binary\";
-            string binaryName = "ae92984b-6f1b-4b0d-ad31-504e1905d5e6.exe";
-            string oo2Name = "oo2net_9_win64.dll";
             DirectoryInfo di = new DirectoryInfo(binaryPath);
             FileInfo[] files = di.GetFiles();
             bool fileFound = false;
@@ -105,7 +106,8 @@ namespace LostArkLogger.GUI
                 {
                     if (originalFileFound == false)
                     {
-                        MessageBox.Show("patcher can't find original binary. reinstall loa-details to roll back to original binary. sorry");
+                        MessageBox.Show("patcher can't find original binary. reinstall loa-details to roll back to original binary. sorry\n"+
+                            "(or it is already changed to original binary)");
                         return;
                     }
 
@@ -132,6 +134,27 @@ namespace LostArkLogger.GUI
         private void radioButton2_CheckedChanged(object sender, EventArgs e)
         {
             patchToForkedVersion = false;
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            if (textBox1.Text == binaryName) return;
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\Programs\loa-details\binary\";
+            if (!textBox1.Text.EndsWith(".exe"))
+            {
+                textBox1.Text = textBox1.Text + ".exe";
+                return;
+            } else if (textBox1.Text.Length != 0 && !File.Exists(path + textBox1.Text) && File.Exists(path + binaryName))
+            {
+                MessageBox.Show("Copy and paste the file name instead of write it yourself here.\n"+
+                    "if you don't know file name, wait new release. it will be updated\n"+
+                    "(copy file name -> ctrl+a + ctrl+v here.)");
+                textBox1.Text = binaryName;
+            } else if (textBox1.Text.Length != 0 && File.Exists(path + textBox1.Text))
+            {
+                binaryName = textBox1.Text;
+                textBox1.Enabled = false;
+            }
         }
     }
 }

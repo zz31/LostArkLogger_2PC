@@ -56,9 +56,19 @@ namespace LostArkLogger
                 hideControl(radioButton2);
                 hideControl(radioButton3);
                 hideControl(cbox_lockNic);
+                hideControl(button1);
+                hideControl(button2);
                 if (Properties.Settings.Default.LockedNICname.Length == 0 && Properties.Settings.Default.LockedRegionName.Length == 0)
                 {
-                    MessageBox.Show("Select nic and region to link with loa detail.");
+                    DialogResult res = MessageBox.Show("Select nic and region to link with loa detail.\n\n"+
+                        "\n* You can disable console mode(loa-details link) with 'Cancel' button."+
+                        "\n* If disabled, NIC&Region Lock can be set. Once set, it also applied when console mode."+
+                        "\n* if you wants to use NIC&Region lock at loa-details, check checkbox and close dps meter and restart loa-details.", "information", MessageBoxButtons.OKCancel);
+                    if (res == DialogResult.Cancel)
+                    {
+                        startArgs = null;
+                        this.Text = "2PC";
+                    }
                 }
             } else
             {
@@ -219,7 +229,9 @@ namespace LostArkLogger
                 settingSync(Properties.Settings.Default.LogEnabled, cboxEnableLogger);
                 showControl(cboxEnableLogger);
                 showControl(versionLabel);
-
+                showControl(debugLog);//when disable console mode
+                showControl(button1);//same
+                showControl(button2);//same
                 timer1.Enabled = true;
             }
         }
