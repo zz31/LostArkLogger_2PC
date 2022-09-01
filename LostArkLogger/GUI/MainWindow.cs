@@ -327,5 +327,18 @@ namespace LostArkLogger
         {
             rb_changed(2);
         }
+
+        LostArkLogger.GUI.LoaDetailsPatcher loaDetailsPatcher;
+        private void button2_Click(object sender, EventArgs e)
+        {
+            loaDetailsPatcher = new GUI.LoaDetailsPatcher();
+            loaDetailsPatcher.Show();
+            loaDetailsPatcher.showNotice();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("it will be add later");
+        }
     }
 }
