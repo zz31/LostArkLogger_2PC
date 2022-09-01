@@ -333,7 +333,7 @@ namespace LostArkLogger
                     elapsed = encounter.RaidTime;
                 }
 
-                if (useNewEtime != 0 && elapsedTime_New != 0) { elapsed = elapsedTime_New; }
+                if (useNewEtime != 0 && elapsedTime_New != 0 && (encounter.End == default(DateTime))) { elapsed = elapsedTime_New; }
                 //may cause error at boss around trash mobs.. todo : add whitelist at parser.cs?
 
                 var maxDamage = rows.Count == 0 ? 0 : rows.Max(b => b.Value.Item1);

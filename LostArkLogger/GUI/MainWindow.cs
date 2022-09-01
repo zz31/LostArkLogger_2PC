@@ -231,7 +231,7 @@ namespace LostArkLogger
 
         private void cbox_lockNic_CheckedChanged(object sender, EventArgs e)
         {
-            if (cbox_lockNic.Checked == true)
+            if (cbox_lockNic.Checked == true && nicListBox.SelectedItem != null)
             {
                 Properties.Settings.Default.LockedNICname = nicListBox.SelectedItem.ToString();
                 Properties.Settings.Default.LockedRegionName = regionSelector.SelectedItem.ToString();

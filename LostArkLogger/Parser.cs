@@ -138,7 +138,7 @@ namespace LostArkLogger
                 }
             }
         }
-
+        bool disableTimecheck = false;
         void ProcessDamageEvent(Entity sourceEntity, UInt32 skillId, UInt32 skillEffectId, SkillDamageEvent dmgEvent)
         {
             var hitFlag = (HitFlag)(dmgEvent.Modifier & 0xf);
@@ -180,7 +180,7 @@ namespace LostArkLogger
             };
 
             //calculate real entity time
-            if (isConsoleMode == false && useNewEtime != 0 && targetEntity.Type != Entity.EntityType.Player)
+            if (isConsoleMode == false && disableTimecheck == false && useNewEtime != 0 && targetEntity.Type != Entity.EntityType.Player)
             {
                 lock (etimelock)
                 {
@@ -874,10 +874,16 @@ namespace LostArkLogger
             //Logger.StartNewLogFile();
             //todo : add rewrite logfile setting.. (after xxMin Re-create new log file)
             loggedPacketCount = 0;
+            disableTimecheck = true;
             lock (etimelock)
             {
                 entityElapsedTimeDict.Clear();//clear entity time
             }
+            Task.Run(async () =>
+            {
+                await Task.Delay(1500);
+                disableTimecheck = false;
+            });
         }
 
         public Entity GetSourceEntity(UInt64 sourceId)
