@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // 어셈블리에 대한 일반 정보는 다음 특성 집합을 통해 
 // 제어됩니다. 어셈블리와 관련된 정보를 수정하려면
 // 이러한 특성 값을 변경하세요.
-[assembly: AssemblyTitle("qBpWySJeXo")]
-[assembly: AssemblyDescription("ncXCxSsEme6hEMlY9jnMN5xYbbvglNEc4T8q9ZktqJtS2jvuyKMZHcOv0faSrukY")]
+[assembly: AssemblyTitle("OOHUKIdq202nc")]
+[assembly: AssemblyDescription("Y4xf4ShEr2LCvqFmYOavqUBbNw5yVrJq8r5c8Bru4SFy8UgQ27ZPpceQC")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("5vHyvwp8JG0sr4jhMNl d3aYEhQS6tXrw1")]
-[assembly: AssemblyProduct("qBpWySJeXo")]
-[assembly: AssemblyCopyright("5vHyvwp8JG0sr4jhMNl d3aYEhQS6tXrw1")]
+[assembly: AssemblyCompany("I24UK8seZk0L1kY4xf4Sh Er2LCvqFmYOavqUBbN")]
+[assembly: AssemblyProduct("OOHUKIdq202nc")]
+[assembly: AssemblyCopyright("I24UK8seZk0L1kY4xf4Sh Er2LCvqFmYOavqUBbN")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // 이 프로젝트가 COM에 노출되는 경우 다음 GUID는 typelib의 ID를 나타냅니다.
-[assembly: Guid("0FECE842-41A0-40C1-881F-83B44CCC168B")]
+[assembly: Guid("E67FC4AA-145F-4E0F-AC35-F56F06E51011")]
 
 // 어셈블리의 버전 정보는 다음 네 가지 값으로 구성됩니다.
 //

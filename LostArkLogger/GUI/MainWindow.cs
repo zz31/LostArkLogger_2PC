@@ -350,7 +350,6 @@ namespace LostArkLogger
 
         private void button1_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("it will be add later");
         }
     }
 }

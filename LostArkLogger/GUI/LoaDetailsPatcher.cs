@@ -26,7 +26,8 @@ namespace LostArkLogger.GUI
             MessageBox.Show("if you're running loa-details, exit loa-details first.\n"+
                 "because running process's filename can't be changed. \n\n"+
                 "Also, for the same reason, when reverting from the fork version to the original binary,\n"+
-                "needs copy and paste this exe for create another file and use it.", "Notice");
+                "needs copy and paste this exe for create another file and use it.\n\n" +
+                "[** it only works if Loa-details is installed in the default installation path. **]", "Notice");
         }
         private void button1_Click(object sender, EventArgs e)
         {
@@ -43,7 +44,7 @@ namespace LostArkLogger.GUI
             }
 
             if (patchToForkedVersion == true &&
-                MessageBox.Show("Patch Loa-details binary to 2pc forked version?", "Confirm", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                MessageBox.Show("Patch Loa-details binary to 2pc forked version?\n(currently only works with default loa-details install directory)", "Confirm", MessageBoxButtons.OKCancel) == DialogResult.OK)
             {
                 bool hasException = false;
                 try
