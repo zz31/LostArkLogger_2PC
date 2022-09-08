@@ -19,6 +19,7 @@ namespace LostArkLogger.Utilities
         private static readonly object DebugFileLock = new object();
         private static readonly object packetDumpLock = new object();
         public static string fileName = logsPath + "\\LostArk_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".log";
+        public static string fileNameLog = logsPath + "\\LALogs.log";
 
         static Logger()
         {
@@ -90,7 +91,7 @@ namespace LostArkLogger.Utilities
             {
                 lock (LogFileLock)
                 {
-                    File.AppendAllText(fileName, log + "|" + logHash + "\n");
+                    File.AppendAllText(fileNameLog, log + "|" + logHash + "\n");
                 }
             });
         }
