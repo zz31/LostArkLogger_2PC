@@ -13,14 +13,29 @@ namespace LostArkLogger.GUI
 {
     public partial class LoaDetailsPatcher : Form
     {
-        public LoaDetailsPatcher()
-        {
-            InitializeComponent();
-        }
-
         bool patchToForkedVersion = true;
         string binaryName = "ae92984b-6f1b-4b0d-ad31-504e1905d5e6.exe";
         string oo2Name = "oo2net_9_win64.dll";
+        string path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\Programs\loa-details\";
+        bool needsManualSelection = false;
+        public LoaDetailsPatcher()
+        {
+            InitializeComponent();
+            string binaryPath = path + @"binary\";
+            DirectoryInfo di = new DirectoryInfo(binaryPath);
+            if (di.Exists == false)
+            {
+                path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Programs\loa-details\";
+                di = new DirectoryInfo(path + @"binary\");
+                if (di.Exists == false)
+                {
+                    needsManualSelection = true;
+                    path = "NEEDS MANUAL SELECTION";
+                }
+            }
+            lbl_path.Text = path;
+        }
+
         public void showNotice()
         {
             MessageBox.Show("if you're running loa-details, exit loa-details first.\n"+
@@ -31,12 +46,15 @@ namespace LostArkLogger.GUI
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            string path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\Programs\loa-details\";
+            if (needsManualSelection == true) {
+                MessageBox.Show("The Loa-details installation path could not be found, so patching is possible only after manually selected.");
+                return;
+            }
+            bool fileFound = false;
+            bool originalFileFound = false;
             string binaryPath = path + @"binary\";
             DirectoryInfo di = new DirectoryInfo(binaryPath);
             FileInfo[] files = di.GetFiles();
-            bool fileFound = false;
-            bool originalFileFound = false;
             for (int i = 0; i < files.Length; i++)
             {
                 if (files[i].Name == binaryName) fileFound = true;
@@ -44,7 +62,7 @@ namespace LostArkLogger.GUI
             }
 
             if (patchToForkedVersion == true &&
-                MessageBox.Show("Patch Loa-details binary to 2pc forked version?\n(currently only works with default loa-details install directory)", "Confirm", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                MessageBox.Show("Patch Loa-details binary to 2pc forked version?", "Confirm", MessageBoxButtons.OKCancel) == DialogResult.OK)
             {
                 bool hasException = false;
                 try
@@ -156,6 +174,29 @@ namespace LostArkLogger.GUI
                 binaryName = textBox1.Text;
                 textBox1.Enabled = false;
             }
+        }
+
+        private void btn_select_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("The Loa-Details shortcut link also works. You don't have to browse and select folders yourself.");
+            System.Windows.Forms.OpenFileDialog dialog = new System.Windows.Forms.OpenFileDialog();
+            dialog.Filter = "Loa-Details EXE|*.exe;";
+
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string[] str = dialog.FileName.Split(new string[] { @"loa-details\" }, StringSplitOptions.RemoveEmptyEntries);
+                if (str.Length == 2)
+                {
+                    path = str[0] +@"loa-details\";
+                    needsManualSelection = false;
+                } else
+                {
+                    MessageBox.Show("The file appears to have been selected incorrectly.");
+                }
+                lbl_path.Text = path;
+            }
+            lbl_path.Text = path;
+            return;
         }
     }
 }
