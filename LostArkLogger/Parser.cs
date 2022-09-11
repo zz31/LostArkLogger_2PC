@@ -23,8 +23,6 @@ namespace LostArkLogger
         public event Action onNewZone;
         public event Action beforeNewZone;
         public event Action<int> onPacketTotalCount;
-        internal Action<UInt64, UInt64> onHpChange;
-        internal Action<UInt64> setElapsedTime;
         public bool use_npcap = true;
         private object lockPacketProcessing = new object(); // needed to synchronize UI swapping devices
         public Machina.Infrastructure.NetworkMonitorType? monitorType = null;
@@ -40,24 +38,15 @@ namespace LostArkLogger
         public StatusEffectTracker statusEffectTracker;
         public bool isConsoleMode = false;
         public bool logEnabled = false;
-        public int useNewEtime = 0;//0:def 1:entity 2:damagepacket
+        public bool isFirstPC = false;
+        public int eTimeType = 0;//0:def 1:entity 2:damagepacket
         private static readonly object etimelock = new object();
-        //public ushort[] alreadyLoggedOPcodes;
 
         public Parser()
         {
         }
         public void startParse(string nicName)
         {
-            /*
-            string[] files = Directory.GetFiles(@"C:\Users\user\Documents\Lost Ark Logs");
-            List<ushort> opcodelist = new List<ushort>();
-            foreach (string fname in files)
-            {
-                opcodelist.Add(ushort.Parse(fname.Split('\\')[5].Split('_')[0]));
-            }
-            alreadyLoggedOPcodes = opcodelist.ToArray();
-            */
             Encounters.Add(currentEncounter);
             onCombatEvent += Parser_onDamageEvent;
             onNewZone += Parser_onNewZone;
@@ -66,12 +55,26 @@ namespace LostArkLogger
             statusEffectTracker.OnStatusEffectStarted += StatusEffectTracker_OnStatusEffectStarted;
             InstallListener(nicName);
         }
+
+        public UInt64[] getLatestEntityHPInfo()
+        {
+            return LatestEntityHPInfo;
+        }
+        public UInt64 getLatestEntityElapsedTime()
+        {
+            if (LatestEntityID == 0) return 0;
+            return entityElapsedTimeDict[LatestEntityID][0];
+        }
         private void toHttpBridge(int id, params string[] elements)
         {
             if (isConsoleMode == true || Properties.Settings.Default.LogEnabled == true)
             {
                 Logger.httpbridgeSender(id, elements);
             }
+        }
+        private void exceptionLog(Exception e)
+        {
+            Logger.writeLogFile(99999, e.StackTrace, e.Source, e.Message);
         }
 
         // UI needs to be able to ask us to reload our listener based on the current user settings
@@ -96,7 +99,7 @@ namespace LostArkLogger
                     try
                     {
                         pcap_strerror(1); // verify winpcap works at all
-                        gameInterface = NetworkUtil.GetAdapterUsedByProcess(nicName);
+                        gameInterface = NetworkUtil.GetAdapter(nicName, NetworkUtil.ReqType.NICName);
                         if (gameInterface == null) {
                             Properties.Settings.Default.LockedNICname = "";
                             Properties.Settings.Default.LockedRegionName = "";
@@ -104,6 +107,7 @@ namespace LostArkLogger
                             MessageBox.Show("The selected NIC does not exist.");
                             Environment.Exit(0);
                         }
+
                         foreach (var device in CaptureDeviceList.Instance)
                         {
                             if (device.MacAddress == null) continue; // SharpPcap.IPCapDevice.MacAddress is null in some cases
@@ -111,7 +115,8 @@ namespace LostArkLogger
                             {
                                 try
                                 {
-                                    device.Open(DeviceModes.Promiscuous, 1000); // todo: 1sec timeout ok?
+                                    if (isFirstPC == true) device.Open(DeviceModes.None, 1000); // todo: 1sec timeout ok?
+                                    if (isFirstPC == false) device.Open(DeviceModes.Promiscuous, 1000);
                                     device.Filter = filter;
                                     device.OnPacketArrival += new PacketArrivalEventHandler(Device_OnPacketArrival_pcap);
                                     device.StartCapture();
@@ -139,6 +144,8 @@ namespace LostArkLogger
             }
         }
         bool disableTimecheck = false;
+        UInt64[] LatestEntityHPInfo = new UInt64[2] { 0, 0 };
+        UInt64 LatestEntityID = 0;
         void ProcessDamageEvent(Entity sourceEntity, UInt32 skillId, UInt32 skillEffectId, SkillDamageEvent dmgEvent)
         {
             var hitFlag = (HitFlag)(dmgEvent.Modifier & 0xf);
@@ -179,12 +186,12 @@ namespace LostArkLogger
                 FrontAttack = hitOption == HitOption.HIT_OPTION_FRONTAL_ATTACK
             };
 
-            //calculate real entity time
-            if (isConsoleMode == false && disableTimecheck == false && useNewEtime != 0 && targetEntity.Type != Entity.EntityType.Player)
+            //calculate real damagable time
+            if (isConsoleMode == false && disableTimecheck == false && eTimeType != 0 && targetEntity.Type != Entity.EntityType.Player)
             {
                 lock (etimelock)
                 {
-                    ulong tid = (useNewEtime == 1) ? dmgEvent.TargetId : 1;
+                    ulong tid = (eTimeType == 1) ? dmgEvent.TargetId : 1;
                     //1 : entity hit event
                     //2 : damage event = lock to id 1
                     entityElapsedTimeDict.AddOrUpdate(tid, new UInt64[2] { 1, 0 }, (k, v) =>
@@ -192,14 +199,14 @@ namespace LostArkLogger
                         UInt64 cv = (UInt64)(DateTime.Now.Ticks / 10000000);
                         if (cv - v[1] >= 1)//if diff 1sec
                         {
-                            if (v[0] > 5) setElapsedTime(v[0] + 1);//ignore trash mobs elapsed time
-                            return new UInt64[2] { v[0] + 1, cv };//add 1 sec, save last timestamp
+                            return new UInt64[2] { v[0] + 1, cv };//add 1 sec, save current timestamp
                         }
                         else
-                        {//getoradd -> update is better? or current function is better??..
+                        {
                             return v;
                         }
                     });
+                    LatestEntityID = tid;
                 }
             }
             //
@@ -212,7 +219,8 @@ namespace LostArkLogger
                 var m = dmgEvent.MaxHp;
                 if (c < 0) c = 0;
                 if (m < 0) m = 0;
-                onHpChange((UInt64)c, (UInt64)m);
+                LatestEntityHPInfo[0] = (ulong)c;
+                LatestEntityHPInfo[1] = (ulong)m; 
             }
             try
             {

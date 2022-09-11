@@ -11,7 +11,7 @@ namespace LostArkLogger
 {
     public class Overlay : Form
     {
-        public enum Level // need better state, suboverlay type/etc.
+        enum Level // need better state, suboverlay type/etc.
         {
             None,
             StatusEffectTimes,
@@ -26,15 +26,15 @@ namespace LostArkLogger
             BattleItems,
             Max
         }
-        public enum Scope // need better state, suboverlay type/etc.
+        enum Scope // need better state, suboverlay type/etc.
         {
             TopLevel,
             Encounters,
             Player
         }
 
-        public Level level = Level.Damage;
-        public Scope scope = Scope.TopLevel;
+        Level level = Level.Damage;
+        Scope scope = Scope.TopLevel;
         public bool addBGColor = true;
 
         public Overlay()
@@ -104,9 +104,9 @@ namespace LostArkLogger
         public static string FormatNumber_K(UInt64 n)
         {
             if (n < 10000) { return n.ToString(); }
-            if (n < 100000000) return Math.Floor((decimal)(n / 10000)).ToString() + "만";
-            if (n < 1000000000000) return (Math.Floor((decimal)(n / 1000000)) / 100).ToString() + "억";//x.xx억
-            if (n >= 1000000000000) return (Math.Floor((decimal)(n / 100000000)) / 10000).ToString() + "조";//x.xxxx조
+            if (n < 100000000) return Math.Floor((double)(n / 10000)).ToString() + "만";
+            if (n < 1000000000000) return (Math.Floor((double)(n / 1000000)) / 100).ToString() + "억";//x.xx억
+            if (n >= 1000000000000) return (Math.Floor((double)(n / 100000000)) / 10000).ToString() + "조";//x.xxxx조
             return n.ToString();
         }
         public static string FormatNumber_EN(UInt64 n) // https://stackoverflow.com/questions/30180672/string-format-numbers-to-millions-thousands-with-rounding
@@ -121,88 +121,38 @@ namespace LostArkLogger
             return String.Format("{0:#,,,.##}B", n - 5000000);
         }
 
-        private UInt64 chp = 0;
-        private UInt64 mhp = 0;
-        private UInt64 totalDamage = 0;
-        private UInt64 elapsedTime_default = 0;
-        private UInt64 elapsedTime_New = 0;
-        private bool updated = false;
-        public int useNewEtime = 0;
-        private string hp_str = "";
-        private string tdps_str = "";
-        private string estTime_str = "";
-        private bool resetting = false;
-        public void resetAddonValue()
+        internal Func<UInt64[]> getHP;//parser->overlay
+        internal Func<UInt64> getElapsedTime;//parser->overlay
+        public string[] getCurrentInformation()
         {
-            resetting = true;
-            Task.Run(async () =>
-            {
-                await Task.Delay(1500);
-                try
-                {
-                    chp = 0;
-                    mhp = 0;
-                    totalDamage = 0;
-                    elapsedTime_default = 0;
-                    elapsedTime_New = 0;
-                    updated = false;
-                    hp_str = "";
-                    estTime_str = "";
-                    Invalidate();
-                    resetting = false;
-                } catch (Exception) { resetting = false; } finally { resetting = false; }
-            });
-        }
-        public void onhpUpdate(UInt64 a, UInt64 b)
-        {
-            if (resetting) return;
-            chp = a;
-            mhp = b;
-            updated = true;
-        }
-        private void teamDmgUpdate(UInt64 tdmg, UInt64 etime)
-        {
-            if (resetting) return;
-            totalDamage = tdmg;
-            elapsedTime_default = etime;
-            updated = true;
-        }
-        public void elapsedTimeUpdate(UInt64 etime)
-        {
-            if (resetting) return;
-            elapsedTime_New = etime;
-            updated = true;
-        }
-        public void tryUpdate()
-        {
-            if (resetting) return;
-            if (encounter == null || updated != true || mhp == 0 || totalDamage == 0 ||
-                (useNewEtime == 0 && elapsedTime_default == 0) ||
-                (useNewEtime != 0 && elapsedTime_New == 0)) return;
-            UInt64 deadPlayerDamage = 0;
+            if (encounter == null) return null;
+            UInt64[] hpinfo = getHP();//cur, max
+            UInt64 totalDamage = 0;
+            UInt64 elapsedTime = getElapsedTime();
+            if (hpinfo[0] == 0 || hpinfo[1] == 0 ||
+                elapsedTime == 0) return null;
             var rows = encounter.GetDamages(i => i.Damage, SubEntity);
             var rKeys = rows.Keys.ToArray();
             var eKeys = encounter.Entities.Keys.ToArray();
             for (int i=0; i<eKeys.Count(); i++)
             {
                 if (encounter.Entities[eKeys[i]].Type == Entity.EntityType.Player &&
-                    encounter.Entities[eKeys[i]].dead == true &&
+                    encounter.Entities[eKeys[i]].dead == false &&
                     rKeys.Contains(encounter.Entities[eKeys[i]].VisibleName) == true)
                 {
-                    deadPlayerDamage += rows[encounter.Entities[eKeys[i]].VisibleName].Item1;
+                    totalDamage += rows[encounter.Entities[eKeys[i]].VisibleName].Item1;
                 }
             }
-            UInt64 etime = (useNewEtime == 0) ? elapsedTime_default : elapsedTime_New;
-            if (etime == 0) return;
-            UInt64 tdps = (totalDamage - deadPlayerDamage) / etime;
-            if (tdps == 0) return;
-            UInt64 t = (chp / tdps);
-            UInt64 t2 = t + etime;
+            UInt64 tdps = totalDamage / elapsedTime;
+            if (tdps == 0) return null;
+            UInt64 t = (hpinfo[0] / tdps);
+            UInt64 t2 = t + elapsedTime;
 
-
-            hp_str = "[ "+FormatNumber(chp)+"  /  "+FormatNumber(mhp)+" HP ]";
-            tdps_str = "Team DPS "+FormatNumber(tdps);
-            estTime_str = (etime / 60).ToString("00") + ":" + (etime % 60).ToString("00") + " / Est. " + (t2 / 60).ToString("00") + ":" + (t2 % 60).ToString("00") +"(+"+(t/60).ToString("00")+":"+(t%60).ToString("00")+")";
+            string[] ss = new string[3];//HP, TOTAL DPS, EST.Time
+            ss[0] = "[ " + FormatNumber(hpinfo[0]) +"  /  " + FormatNumber(hpinfo[1]) +" HP ]";
+            ss[1] = (elapsedTime / 60).ToString("00") + ":" + (elapsedTime % 60).ToString("00") + " / " + (t2 / 60).ToString("00") + ":" + (t2 % 60).ToString("00") +"(Est. +"+(t/60).ToString("00")+":"+(t%60).ToString("00")+")";
+            ss[2] = "DPS " + FormatNumber(tdps);
+            return ss;
         }
         public void updateUI()
         {
@@ -264,11 +214,15 @@ namespace LostArkLogger
             var titleBar = e.Graphics.MeasureString(title, font);
             var heightBuffer = (barHeight - titleBar.Height) / 2;
 
-            if (level == Level.Damage && scope == Scope.TopLevel && hp_str.Length != 0)
+            if (level == Level.Damage && scope == Scope.TopLevel)
             {
-                e.Graphics.DrawString(hp_str, font, black, 5, heightBuffer);
-                e.Graphics.DrawString(estTime_str, font, black, (this.Width/2) - ((e.Graphics.MeasureString(estTime_str, font).Width/2)), heightBuffer);
-                e.Graphics.DrawString(tdps_str, font, black, this.Width - e.Graphics.MeasureString(tdps_str, font).Width - 55, heightBuffer);
+                string[] s = getCurrentInformation();
+                if (s != null)
+                {
+                    e.Graphics.DrawString(s[0], font, black, 5, heightBuffer);
+                    e.Graphics.DrawString(s[1], font, black, (this.Width / 2) - ((e.Graphics.MeasureString(s[1], font).Width / 2)), heightBuffer);
+                    e.Graphics.DrawString(s[2], font, black, this.Width - e.Graphics.MeasureString(s[2], font).Width - 55, heightBuffer);
+                }
             } else
             {
                 e.Graphics.DrawString(title, font, black, 5, heightBuffer);
@@ -333,9 +287,6 @@ namespace LostArkLogger
                     elapsed = encounter.RaidTime;
                 }
 
-                if (useNewEtime != 0 && elapsedTime_New != 0 && (encounter.End == default(DateTime))) { elapsed = elapsedTime_New; }
-                //may cause error at boss around trash mobs.. todo : add whitelist at parser.cs?
-
                 var maxDamage = rows.Count == 0 ? 0 : rows.Max(b => b.Value.Item1);
                 var totalDamage = rows.Values.Sum(b => (Single)b.Item1);
                 orderedRows = rows.OrderByDescending(b => b.Value);
@@ -387,7 +338,6 @@ namespace LostArkLogger
                     e.Graphics.DrawString(rowText, font, black, nameOffset + 5, (i + 1) * barHeight + heightBuffer);
                     e.Graphics.DrawString(formattedDmg, font, black, Size.Width - edge.Width, (i + 1) * barHeight + heightBuffer);
                 }
-                teamDmgUpdate((ulong)(totalDamage), (ulong)elapsed);
             }
         }
         [DllImport("user32.dll")] static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
@@ -402,7 +352,6 @@ namespace LostArkLogger
                 SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
 
                 var index = (int)Math.Floor(e.Location.Y / (float)barHeight - 1);
-                //if (level == Level.Damage && scope == Scope.TopLevel && index > orderedRows.Count() - 1) return;
                 if (index >= 0)// && index <= Damages.Count)
                 {
                     if (scope == Scope.TopLevel)

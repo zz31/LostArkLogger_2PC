@@ -15,6 +15,7 @@ namespace LostArkLogger
         HttpBridge httpBridge;
         private int _packetCount;
         string[] startArgs;
+        bool isFirstPC = Program.VersionCompatibility();
         System.Collections.Generic.List<int> ints = new System.Collections.Generic.List<int>();//check first access 
 
         //public event PropertyChangedEventHandler PropertyChanged;
@@ -78,7 +79,15 @@ namespace LostArkLogger
                     settingSync(Properties.Settings.Default.LogEnabled, cboxEnableLogger);
                 }
             }
-            if (Properties.Settings.Default.LockedNICname.Length > 0 && Properties.Settings.Default.LockedRegionName.Length > 0)
+            if (isFirstPC == true)
+            {
+                (var region, var installedVersion) = VersionCheck.GetLostArkVersion();
+                Properties.Settings.Default.Region = region;
+                Properties.Settings.Default.Save();
+                regionSelector.SelectedItem = NetworkUtil.GetAdapter("LostArk", NetworkUtil.ReqType.ProcessName).Name;
+            } else if (isFirstPC == false && 
+                Properties.Settings.Default.LockedNICname.Length > 0 &&
+                Properties.Settings.Default.LockedRegionName.Length > 0)
             {
                 regionSelector.SelectedItem = Properties.Settings.Default.LockedRegionName;
                 nicListBox.SelectedItem = Properties.Settings.Default.LockedNICname;
@@ -149,7 +158,6 @@ namespace LostArkLogger
         private void timer1_Tick(object sender, EventArgs e)
         {
             loggedPacketCountLabel.Text = PacketCount;
-            overlay.tryUpdate();
         }
 
         private void MainWindow_Load(object sender, EventArgs e)
@@ -176,6 +184,7 @@ namespace LostArkLogger
             } else
             {
                 sniffer = new Parser();
+                sniffer.isFirstPC = isFirstPC;
                 sniffer.onPacketTotalCount += (int totalPacketCount) =>
                 {
                     _packetCount = totalPacketCount;
@@ -212,9 +221,8 @@ namespace LostArkLogger
                 } 
                 sniffer.startParse(nicListBox.SelectedItem.ToString());
                 overlay.AddSniffer(sniffer);
-                sniffer.onHpChange += overlay.onhpUpdate;
-                sniffer.setElapsedTime += overlay.elapsedTimeUpdate;
-                sniffer.onNewZone += overlay.resetAddonValue;
+                overlay.getHP = sniffer.getLatestEntityHPInfo;
+                overlay.getElapsedTime = sniffer.getLatestEntityElapsedTime;
 
                 showControl(addBgColor);
                 cbox_lockNic.Text = "Use Current NIC/Region setting\n(" + regionSelector.SelectedItem.ToString() + " / " + nicListBox.SelectedItem.ToString() + ")";
@@ -322,8 +330,7 @@ namespace LostArkLogger
         {
             Properties.Settings.Default.ElapsedTimeType = selected;//0:default 1:entity 2:dmgpacket
             Properties.Settings.Default.Save();
-            sniffer.useNewEtime = Properties.Settings.Default.ElapsedTimeType;
-            overlay.useNewEtime = Properties.Settings.Default.ElapsedTimeType;
+            sniffer.eTimeType = Properties.Settings.Default.ElapsedTimeType;
         }
         private void radioButton1_CheckedChanged(object sender, EventArgs e)
         {
