@@ -1,7 +1,7 @@
 # 2PC DPS meter
 I have no intention of claiming ownership or copyright of the code I wrote, and I am not interested in how anyone uses it.
 
-Don't mind me and just follow the copyright of the original github(shalzuth/lostarklogger) if you want to do something with the code I modified.
+Don't mind me and just follow the Licenses of the original github(shalzuth/lostarklogger) if you want to do something with the code I modified.
 
 # Todo (order and priority are irrelevant)
 1. Resolve misdiagnosis issues
