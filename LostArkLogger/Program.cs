@@ -43,10 +43,11 @@ namespace LostArkLogger
         }
         public static bool VersionCompatibility()
         {//return true = first pc, false = second pc
+            bool lockEnabled = (Properties.Settings.Default.LockedNICname.Length != 0 && Properties.Settings.Default.LockedRegionName.Length != 0);
             (var region, var installedVersion) = VersionCheck.GetLostArkVersion();
             if (installedVersion == null)
             {
-                MessageBox.Show("You must select the NIC yourself because Lost Ark is not running.", "Lost Ark Not Running", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                if (lockEnabled == false) MessageBox.Show("You must select the NIC yourself because Lost Ark is not running.", "Lost Ark Not Running", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return false;//second pc
             }
             else if (region == Region.Unknown)

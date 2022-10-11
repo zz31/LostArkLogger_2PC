@@ -256,7 +256,8 @@ namespace LostArkLogger
                 Properties.Settings.Default.LockedNICname = nicListBox.SelectedItem.ToString();
                 Properties.Settings.Default.LockedRegionName = regionSelector.SelectedItem.ToString();
                 Properties.Settings.Default.Save();
-            } else
+            }
+            else
             {
                 Properties.Settings.Default.LockedNICname = "";
                 Properties.Settings.Default.LockedRegionName = "";

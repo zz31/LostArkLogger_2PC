@@ -213,7 +213,7 @@ namespace LostArkLogger
             }
             var titleBar = e.Graphics.MeasureString(title, font);
             var heightBuffer = (barHeight - titleBar.Height) / 2;
-
+            /*
             if (level == Level.Damage && scope == Scope.TopLevel)
             {
                 string[] s = getCurrentInformation();
@@ -225,9 +225,9 @@ namespace LostArkLogger
                 }
             } else
             {
-                e.Graphics.DrawString(title, font, black, 5, heightBuffer);
-            }
-
+                
+            }*/
+            e.Graphics.DrawString(title, font, black, 5, heightBuffer);
             ControlPaint.DrawFocusRectangle(e.Graphics, new Rectangle(Size.Width - 50, barHeight / 4, 10, barHeight / 2));
             e.Graphics.DrawLine(arrowPen, Size.Width - 30, barHeight / 2, Size.Width - 20, barHeight / 2);
             e.Graphics.DrawLine(arrowPen, Size.Width - 5, barHeight / 2, Size.Width - 15, barHeight / 2);
