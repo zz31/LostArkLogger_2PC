@@ -1,4 +1,14 @@
 # 2PC DPS meter
+[The following programs must be installed on the VM or 2nd PC to work]
+
+https://dotnet.microsoft.com/en-us/download/dotnet-framework/net48
+-> dps meter is written by c# so it needs .net framework
+
+https://npcap.com/#download or https://www.winpcap.org/
+-> if you using my fork it needs npcap or winpcap. (win10 or 11 = npcap, 7 or older = winpcap. but perhaps npcap works at win7)
+
+https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170
+-> oo2net_9_win64.dll is written by c++ so needs it
 
 # Todo (order and priority are irrelevant)
 1. Resolve misdiagnosis issues
@@ -39,3 +49,7 @@ I'm not interested in how the code I modified is modified or used. This fork was
 Q. How do I use this program on my 2nd pc? How does the first pc communicate with the second pc?
 
 A. VM(Virtual 2nd pc), VPN, ICS(Windows Basic Feature), Network Tap Device, port/packet mirroring feature on router/switch
+
+Q. 한국섭은 왜안됨? 한국섭 지원좀 해줘
+
+A. 전 허접이라 themida 언팩못함. 그래서 제가 하려면 실행중인 클라이언트 덤프떠서 분석해야되는데 하다 본계정 정지먹을까봐 안함
