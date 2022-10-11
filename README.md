@@ -18,7 +18,7 @@
 # FAQ
 Q. The file is labeled as a virus in Windows Defender
 
-A. It seems that some codes have been incorrectly diagnosed as viruses. If you're anxious, you can install the vscode yourself and build the source code yourself. I always open all of source code that I upload to the release.
+A. It seems that some codes have been incorrectly diagnosed as viruses. If you're anxious, you can install the vscode and build the source code yourself. I always open all of source code that I upload to the release.
 
 Q. How do I use it in VM/VPN?
 
