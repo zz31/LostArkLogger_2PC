@@ -1,7 +1,7 @@
 # Notice
 2pc fork is no longer updated. I'll come back when the KR server is supported
 
-If anyone needs it, please fork this fork again and update it.
+If anyone needs it, please fork this fork again and update it self.
 
 # 2PC DPS meter
 [The following programs must be installed on the VM or 2nd PC to work]
